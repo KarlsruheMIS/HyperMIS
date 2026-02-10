@@ -71,6 +71,12 @@ int main(int argc, char **argv)
     } 
 
 
+    if (graph_path == nullptr)
+    {
+        std::cerr << "Error: Unable to open file " << graph_path << std::endl;
+        return 1;
+    }
+
     FILE* hgr_file = fopen(graph_path, "r");
     if (!hgr_file) {
         std::cerr << "Error: Unable to open file " << graph_path << std::endl;
