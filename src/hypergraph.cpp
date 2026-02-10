@@ -334,7 +334,7 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u)
 
 void hypergraph_remove_neighbors(hypergraph *g, NodeID u, fast_set *fs, fast_set *efs)
 {
-    NodeID *new_N = (NodeID *)malloc(sizeof(NodeID *) * g->n);
+    NodeID *new_N = (NodeID *)malloc(sizeof(NodeID) * g->n);
 
     fs->clear();
     efs->clear();

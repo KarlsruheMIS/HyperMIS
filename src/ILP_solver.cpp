@@ -80,8 +80,8 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
 
         return {res, optimstatus};
     }
-    catch (GRBException e)
-    {
+        catch (GRBException& e)
+        {
         std::cerr << "Gurobi Exception: " << e.getMessage() << std::endl;
     }
     catch (...)
