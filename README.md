@@ -18,21 +18,22 @@ This will produce different executables to run the ILP on hypergraphs or on grap
 
 Here are important options to specify for our programs:
 
-| Option | Description | Default | Mandatory
-|-|-|-|-
-| `-h` | Display help information | | 
-| `-v` | Verbose mode, shows continuous updates to STDOUT | |
-| `-g path` | Path to the input hypergraph, see input format | | &check;
-| `-o path` | Path to the output for the reduced hypergraph | | 
-| `-t sec` | Timeout in seconds | 3600 (1h) |
-| `-s` | User specific input seed | |
-| `-r` | enable fast reductions (only necessary for ILP runs) | |
-| `-p` | enable strong reductions | |
+| Option | Description | Default | Mandatory |
+|-|-|-|-|
+| `-h` | Display help information | | |
+| `-v` | Verbose mode, shows continuous updates to STDOUT | | |
+| `-g path` | Path to the input hypergraph, see input format | | &check; |
+| `-o path` | Path to the output for the reduced hypergraph | | |
+| `-t sec` | Timeout in seconds | 3600 (1h) | |
+| `-s` | User specific input seed | | |
+| `-r` | enable fast reductions, only necessary for ILP runs | | |
+| `-p` | enable strong reductions | | |
 
 The output of the program without the `-v` option is a single line in the format
 ```
 instance_name,algo,#vertices,#edges,avg_edge_size,#vertices_reduced,#edges_reduced,avg_edge_size_reduced,offset,time,seed
 ```
+
 ## How to Use
 
 Examples of typical use cases are listed below. Change the time limit with `-t`, or add `-r` or `-p` for different reduction configurations as necessary.
