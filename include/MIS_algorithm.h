@@ -69,9 +69,6 @@ public:
     bool remove_dominating_edges();
     void heuristic_reduction_maxnei();
     void heuristic_reduction_minnei();
-    hypergraph* build_reduced_hypergraph(hypergraph* g, std::vector<NodeID>& map, std::vector<NodeID>& remap,std::vector<bool>& sol);
+    hypergraph* build_reduced_hypergraph(hypergraph* g, std::vector<NodeID>& remap,std::vector<bool>& sol);
     void printIS();
 };
-
-std::pair<int, double> greedy_loop(const hypergraph* hgr, double max_time_sec, bool loop, std::vector<bool>& sol);
-NodeID greedy(const hypergraph* hgr, minNodeHeap* pq, std::vector<bool>& mark, std::vector<bool>& MIS_heu);

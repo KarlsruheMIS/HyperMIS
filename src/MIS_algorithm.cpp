@@ -128,8 +128,9 @@ void MISH_algorithm::reduce_graph()
     return;
 }
 
-hypergraph *MISH_algorithm::build_reduced_hypergraph(hypergraph *g, std::vector<NodeID> &map, std::vector<NodeID> &remap, std::vector<bool> & sol)
+hypergraph *MISH_algorithm::build_reduced_hypergraph(hypergraph *g, std::vector<NodeID> &remap, std::vector<bool> & sol)
 {
+    std::vector<NodeID> map(g->n,-1);
     std::vector<int> reduced(status.n, 1);
     for (NodeID v = 0; v < g->n; v++)
     {
@@ -373,106 +374,4 @@ bool MISH_algorithm::remove_dominating_edges()
             break;
     }
     return old_e != status.remaining_edges;
-}
-
-std::pair<int, double> greedy_loop(const hypergraph *g, double max_time_sec, bool loop, std::vector<bool> &sol)
-{
-
-    NodeID n = g->n;
-    auto start_time = std::chrono::high_resolution_clock::now();
-    NodeID best_size = 0;
-    if (n == 0)
-        return {0, 0.0};
-
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_int_distribution<int> seed_dist(0, 1000000);
-    double elapsed_seconds = 0.0;
-    double time_found_best = 0.0;
-
-    minNodeHeap *pq = new minNodeHeap();
-    std::vector<bool> mark(n, 0);
-    std::vector<bool> MIS_heu(n, 0);
-
-    if (loop)
-    {
-        while (elapsed_seconds < max_time_sec)
-        {
-            int random_seed = seed_dist(rng);
-            std::mt19937 local_rng(random_seed);
-            std::uniform_real_distribution<double> noise_dist(0.9, 1.1);
-            assert(pq->empty() && "priority queue has to be empty here");
-
-            for (NodeID v = 0; v < n; v++)
-            {
-                double noise = noise_dist(local_rng);
-                pq->insert(v, g->Nd[v] * noise);
-            }
-
-            NodeID size = greedy(g, pq, mark, MIS_heu);
-            auto elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
-            if (size > best_size)
-            {
-                best_size = size;
-                time_found_best = elapsed_time.count();
-                for (NodeID i = 0; i < MIS_heu.size(); i++)
-                {
-                    sol[i] = MIS_heu[i];
-                }
-            }
-
-            std::fill(mark.begin(), mark.end(), false);
-            std::fill(MIS_heu.begin(), MIS_heu.end(), false);
-        }
-    }
-    else
-    {
-        for (NodeID v = 0; v < n; v++)
-            pq->insert(v, g->Nd[v]);
-        
-        best_size = greedy(g, pq, mark, MIS_heu);
-        std::chrono::duration<double> elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
-        time_found_best = elapsed_time.count();
-        for (NodeID i = 0; i < MIS_heu.size(); i++)
-            sol[i] = MIS_heu[i];
-    }
-
-    return std::make_pair(best_size, time_found_best);
-}
-
-NodeID greedy(const hypergraph *g, minNodeHeap *pq, std::vector<bool> &mark, std::vector<bool> &MIS_heu)
-{
-    NodeID size = 0;
-    while (!pq->empty())
-    {
-        NodeID v = pq->deleteMin();
-        if (!mark[v])
-        {
-            // mark node and add it to the heuristic MIS
-            mark[v] = true;
-            MIS_heu[v] = true;
-            size++;
-            // mark neighbors
-            for (NodeID i = 0; i < g->Nd[v]; i++)
-            {
-                NodeID u = g->N[v][i];
-                if (!mark[u])
-                {
-                    mark[u] = true;
-                    pq->deleteNode(u);
-                }
-                // update neighbors neighbor
-                for (NodeID j = 0; j < g->Nd[u]; j++)
-                {
-                    NodeID w = g->N[v][i];
-                    if (!mark[w])
-                    {
-                        size_t neighbor_key = pq->getKey(w);
-                        pq->decreaseKey(w, neighbor_key - 1);
-                    }
-                }
-            }
-        }
-    }
-    return size;
 }

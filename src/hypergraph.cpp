@@ -83,19 +83,15 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     hypergraph *g = (hypergraph *)malloc(sizeof(hypergraph));
     g->n = n;
     g->m = m;
-
-    g->Vd = (NodeID *)malloc(sizeof(NodeID) * n);
-    g->Va = (NodeID *)malloc(sizeof(NodeID) * n);
-
-    g->Ed = (NodeID *)malloc(sizeof(NodeID) * m);
-    g->Ea = (NodeID *)malloc(sizeof(NodeID) * m);
-
-    g->Nd = (NodeID *)malloc(sizeof(NodeID) * n);
-    g->Na = (NodeID *)malloc(sizeof(NodeID) * n);
-
-    g->V = (NodeID **)malloc(sizeof(NodeID *) * n);
-    g->N = (NodeID **)malloc(sizeof(NodeID *) * n);
-    g->E = (NodeID **)malloc(sizeof(NodeID *) * m);
+    g->Vd = new NodeID[n];
+    g->Va = new NodeID[n];
+    g->Ed = new NodeID[m];
+    g->Ea = new NodeID[m];
+    g->Nd = new NodeID[n];
+    g->Na = new NodeID[n];
+    g->V = new NodeID*[n];
+    g->N = new NodeID*[n];
+    g->E = new NodeID*[m];
 
     for (NodeID i = 0; i < n; i++)
     {
@@ -103,15 +99,15 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
         g->Vd[i] = 0;
         g->Va[i] = MIN_ALLOC;
         g->Na[i] = MIN_ALLOC;
-        g->V[i] = (NodeID *)malloc(sizeof(NodeID) * g->Va[i]);
-        g->N[i] = (NodeID *)malloc(sizeof(NodeID) * g->Na[i]);
+        g->V[i] = new NodeID[g->Va[i]];
+        g->N[i] = new NodeID[g->Na[i]];
     }
 
     for (NodeID i = 0; i < m; i++)
     {
         g->Ed[i] = 0;
         g->Ea[i] = MIN_ALLOC;
-        g->E[i] = (NodeID *)malloc(sizeof(NodeID) * g->Ea[i]);
+        g->E[i] = new NodeID[g->Ea[i]];
     }
 
     return g;
