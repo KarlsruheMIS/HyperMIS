@@ -30,8 +30,8 @@ struct HypergraphLP {
 
 };
 
-std::pair<NodeID, int> ILP_solver(hypergraph *hgr, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool>& solution, const std::vector<bool>& initial_solution = std::vector<bool>());
-std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution, const std::vector<bool> &initial_solution = std::vector<bool>());
+std::pair<NodeID, int> ILP_solver(hypergraph *hgr, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool>& solution);
+std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution);
 bool verifier(hypergraph* hgr, std::vector<bool>& IS);
 bool verifierMIS(MISH_algorithm* mis_alg, hypergraph* hgr);
 

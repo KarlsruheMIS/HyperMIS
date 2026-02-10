@@ -4,7 +4,7 @@
 #include <queue>
 #include <random>
 
-std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution, const std::vector<bool> &initial_solution)
+std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution)
 {
     // idea: check degree 1 nodes that are in the MIS for the heuristic, and fix them in ILP
     if (g->n == 0)
@@ -28,28 +28,6 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
         std::vector<char> vtype(g->n, GRB_BINARY);
         GRBVar *x_ptr = model.addVars(lb.data(), ub.data(), obj.data(), vtype.data(), nullptr, g->n);
         std::vector<GRBVar> x(x_ptr, x_ptr + g->n);
-
-        if (initial_solution.size() == g->n)
-        {
-            // set initial values.
-            for (int i = 0; i < g->n; ++i)
-            {
-                if (initial_solution[i])
-                {
-                    x[i].set(GRB_DoubleAttr_LB, 1.0);
-                    x[i].set(GRB_DoubleAttr_UB, 1.0);
-                }
-                else if (!initial_solution[i])
-                {
-                    x[i].set(GRB_DoubleAttr_LB, 0.0);
-                    x[i].set(GRB_DoubleAttr_UB, 0.0);
-                }
-                else
-                {
-                    x[i].set(GRB_DoubleAttr_Start, initial_solution[i]);
-                }
-            }
-        }
 
         std::vector<double> coeffs(g->n, 1.0);
         GRBLinExpr objective;
@@ -113,7 +91,7 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
     return {-1, -1.0};
 }
 
-std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution, const std::vector<bool> &initial_solution)
+std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution)
 {
     if (g->n == 0)
     {
@@ -136,28 +114,6 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
         std::vector<char> vtype(g->n, GRB_BINARY);
         GRBVar *x_ptr = model.addVars(lb.data(), ub.data(), obj.data(), vtype.data(), nullptr, g->n);
         std::vector<GRBVar> x(x_ptr, x_ptr + g->n);
-
-        if (initial_solution.size() == g->n)
-        {
-            // set initial values.
-            for (int i = 0; i < g->n; ++i)
-            {
-                if (initial_solution[i])
-                {
-                    x[i].set(GRB_DoubleAttr_LB, 1.0);
-                    x[i].set(GRB_DoubleAttr_UB, 1.0);
-                }
-                else if (!initial_solution[i])
-                {
-                    x[i].set(GRB_DoubleAttr_LB, 0.0);
-                    x[i].set(GRB_DoubleAttr_UB, 0.0);
-                }
-                else
-                {
-                    x[i].set(GRB_DoubleAttr_Start, initial_solution[i]);
-                }
-            }
-        }
 
         std::vector<double> coeffs(g->n, 1.0);
         GRBLinExpr objective;

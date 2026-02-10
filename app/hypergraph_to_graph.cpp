@@ -2,7 +2,6 @@
 #include <vector>
 #include <iostream>
 #include <filesystem> // C++17 erforderlich
-#include <string>
 #include <set>
 #include <iostream>
 #include <cstdlib>

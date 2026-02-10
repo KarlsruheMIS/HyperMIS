@@ -10,46 +10,6 @@
 
 #define MIN_ALLOC 8
 
-// static inline void skip_comments(FILE *f)
-// {
-//     int c = fgetc_unlocked(f);
-//     while (c == 'c')
-//     {
-//         while (c != '\n')
-//             c = fgetc_unlocked(f);
-//         c = fgetc_unlocked(f);
-//     }
-//     ungetc(c, f);
-// }
-
-// static inline void skip_line(FILE *f)
-// {
-//     int c = fgetc_unlocked(f);
-//     while (c != '\n')
-//         c = fgetc_unlocked(f);
-// }
-
-// static inline void parse_unsigned_int(FILE *f, int *v)
-// {
-//     int c = fgetc_unlocked(f);
-//     while ((c < '0' || c > '9') && c != '\n' && c != EOF)
-//         c = fgetc_unlocked(f);
-
-//     *v = -1;
-//     if (c == '\n')
-//     {
-//         ungetc(c, f);
-//         return;
-//     }
-
-//     *v = 0;
-//     while (c >= '0' && c <= '9')
-//     {
-//         *v = (*v * 10) + (c - '0');
-//         c = fgetc_unlocked(f);
-//     }
-//     ungetc(c, f);
-// }
 static inline void parse_id(char *Data, size_t *p, long long *v)
 {
     while (Data[*p] < '0' || Data[*p] > '9')
@@ -96,7 +56,9 @@ graph *graph_parse(FILE *f)
     fseek(f, 0, SEEK_SET);
 
     char *Data = (char *)malloc(size);
-    size_t red = fread(Data, 1, size, f);
+    size_t read = fread(Data, 1, size, f);
+    (void)read;
+    
     size_t p = 0;
 
     while (Data[p] == '%')
@@ -114,7 +76,7 @@ graph *graph_parse(FILE *f)
 
     int edge_weights = t == 11;
 
-    if (t != 0 && t !=11) 
+    if (t != 0 && t != 11)
     {
         fprintf(stderr, "Vertex weights are not supported.");
         exit(1);
@@ -136,13 +98,11 @@ graph *graph_parse(FILE *f)
 
         if (edge_weights)
             parse_id(Data, &p, &w); // skip the weights
-            // parse_id(Data, &p, W + u);
 
         parse_id(Data, &p, &v);
         g->V[u] = e;
 
-        int j = 0;
-        while (!(Data[p] == '\n' || Data[p]==EOF))
+        while (!(Data[p] == '\n' || Data[p] == EOF))
         {
             v--;
             g->E[e++] = v;
@@ -150,7 +110,7 @@ graph *graph_parse(FILE *f)
             parse_id(Data, &p, &v);
         }
     }
-    assert(e==m*2);
+    assert(e == m * 2);
     g->V[n] = e;
 
     return g;

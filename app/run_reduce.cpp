@@ -84,6 +84,11 @@ int main(int argc, char **argv)
     }
 
 
+    if (hypergraph_path == nullptr)
+    {
+        std::cerr << "Error: Unable to open file " << hypergraph_path << std::endl;
+        return 1;
+    }
 
     FILE* hgr_file = fopen(hypergraph_path, "r");
     if (!hgr_file) {

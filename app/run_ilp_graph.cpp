@@ -38,7 +38,6 @@ int main(int argc, char **argv)
     unsigned int seed = time(NULL);
     int command;
     std::string name;
-    std::string config = "KFast";
 
     while ((command = getopt(argc, argv, "hvprg:t:s:k:o:")) != -1)
     {
