@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
     if (graph_path == nullptr)
     {
-        std::cerr << "Error: Unable to open file " << graph_path << std::endl;
+        std::cerr << "Error: Unable to open file " << std::endl;
         return 1;
     }
 
