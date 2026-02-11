@@ -52,7 +52,7 @@ static inline void parse_unsigned_int(FILE *f, int *v)
 
 static inline int hypergraph_compare(const void *a, const void *b)
 {
-    return (*(NodeID *)a - *(NodeID *)b);
+    return (*static_cast<const NodeID*>(a) - *static_cast<const NodeID*>(b));
 }
 
 static inline NodeID lower_bound(const NodeID *A, NodeID n, NodeID x)
@@ -80,7 +80,7 @@ void hypergraph_append_element(NodeID *l, NodeID *a, NodeID **A, NodeID v)
 
 hypergraph *hypergraph_init(NodeID n, NodeID m)
 {
-    hypergraph *g = (hypergraph *)malloc(sizeof(hypergraph));
+    hypergraph *g = new hypergraph;
     g->n = n;
     g->m = m;
     g->Vd = new NodeID[n];
@@ -330,7 +330,7 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u)
 
 void hypergraph_remove_neighbors(hypergraph *g, NodeID u, fast_set *fs, fast_set *efs)
 {
-    NodeID *new_N = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    NodeID *new_N = new NodeID[g->n];
 
     fs->clear();
     efs->clear();
@@ -561,9 +561,9 @@ hypergraph *hypergraph_copy(hypergraph *g)
 
     *c = (hypergraph){.n = g->n, .m = g->m};
 
-    c->Vd = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->Va = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->V  = (NodeID **)malloc(sizeof(NodeID *) * c->n);
+    c->Vd = new NodeID[c->n]; 
+    c->Va = new NodeID[c->n];
+    c->V  = new NodeID*[c->n];
 
     for (NodeID i = 0; i < c->n; i++)
     {
@@ -575,29 +575,29 @@ hypergraph *hypergraph_copy(hypergraph *g)
             c->V[i][j] = g->V[i][j];
     }
 
-    c->Nd = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->Na = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->N  = (NodeID **)malloc(sizeof(NodeID *) * c->n);
+    c->Nd = new NodeID[c->n];
+    c->Na = new NodeID[c->n];
+    c->N  = new NodeID*[c->n];
 
     for (NodeID i = 0; i < c->n; i++)
     {
         c->Nd[i] = g->Nd[i];
         c->Na[i] = g->Na[i];
-        c->N[i] = (NodeID *)malloc(sizeof(int) * c->Na[i]);
+        c->N[i] = new NodeID[c->Na[i]];
 
         for (NodeID j = 0; j < c->Nd[i]; j++)
             c->N[i][j] = g->N[i][j];
     }
 
-    c->Ed = (NodeID *)malloc(sizeof(int *) * c->m);
-    c->Ea = (NodeID *)malloc(sizeof(int *) * c->m);
-    c->E = (NodeID **)malloc(sizeof(int *) * c->m);
+    c->Ed = new NodeID[c->m];
+    c->Ea = new NodeID[c->m];
+    c->E = new NodeID*[c->m];
 
     for (NodeID i = 0; i < c->m; i++)
     {
         c->Ed[i] = g->Ed[i];
         c->Ea[i] = g->Ea[i];
-        c->E[i] = (NodeID *)malloc(sizeof(int) * c->Ea[i]);
+        c->E[i] = new NodeID[c->Ea[i]];
 
         for (NodeID j = 0; j < c->Ed[i]; j++)
             c->E[i][j] = g->E[i][j];

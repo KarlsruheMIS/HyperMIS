@@ -39,12 +39,12 @@ static inline void skip_line(char *Data, size_t *p)
 
 graph *graph_init(NodeID n, NodeID m)
 {
-    graph *g = (graph *)malloc(sizeof(graph));
+    graph *g = new graph;
     g->n = n;
     g->m = m;
 
-    g->V = (NodeID *)malloc(sizeof(NodeID) * (n + 1));
-    g->E = (NodeID *)malloc(sizeof(NodeID) * m);
+    g->V = new NodeID[n + 1];
+    g->E = new NodeID[m];
 
     return g;
 }
@@ -55,7 +55,7 @@ graph *graph_parse(FILE *f)
     size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    char *Data = (char *)malloc(size);
+    char *Data = new char[size];
     size_t read = fread(Data, 1, size, f);
     (void)read;
     
