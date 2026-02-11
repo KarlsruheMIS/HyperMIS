@@ -157,7 +157,7 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
 
         return {res, optimstatus};
     }
-    catch (GRBException e)
+    catch (GRBException &e)
     {
         std::cerr << "Gurobi Exception: " << e.getMessage() << std::endl;
     }
