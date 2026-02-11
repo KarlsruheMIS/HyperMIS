@@ -557,7 +557,7 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
 
 hypergraph *hypergraph_copy(hypergraph *g)
 {
-    hypergraph *c = (hypergraph *)malloc(sizeof(hypergraph));
+    hypergraph *c = new hypergraph;
 
     *c = (hypergraph){.n = g->n, .m = g->m};
 
@@ -569,7 +569,7 @@ hypergraph *hypergraph_copy(hypergraph *g)
     {
         c->Vd[i] = g->Vd[i];
         c->Va[i] = g->Va[i];
-        c->V[i] = (NodeID *)malloc(sizeof(int) * c->Va[i]);
+        c->V[i] = new NodeID[c->Va[i]];
 
         for (NodeID j = 0; j < c->Vd[i]; j++)
             c->V[i][j] = g->V[i][j];
