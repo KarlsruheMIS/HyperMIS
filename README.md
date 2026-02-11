@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3071b003786d43f087cf0447cc97aca4)](https://app.codacy.com/gh/KarlsruheMIS/HyperMIS?utm_source=github.com&utm_medium=referral&utm_content=KarlsruheMIS/HyperMIS&utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # hyperMIS
