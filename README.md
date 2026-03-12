@@ -3,6 +3,8 @@
 
 # hyperMIS
 
+Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
+
 ## Installation
 
 You need to have GUROBI installed and set the GUROBI_HOME path in the CMakeLists.txt file.
