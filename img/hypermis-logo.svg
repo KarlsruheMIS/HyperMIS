@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300" width="500" height="300">
+  <!-- Hyperedge 1: A, B, C (blue) -->
+  <path d="M 280,25 Q 339,36 350,94 Q 361,153 292,84 Q 222,14 280,25 Z"
+        fill="#3B82F6" fill-opacity="0.18" stroke="#3B82F6" stroke-width="1.5" stroke-opacity="0.35"/>
+  <!-- Hyperedge 2: C, D, E (emerald) -->
+  <path d="M 350,156 Q 339,214 280,225 Q 222,236 292,166 Q 361,97 350,156 Z"
+        fill="#10B981" fill-opacity="0.18" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.35"/>
+  <!-- Hyperedge 3: E, F, G (amber) -->
+  <path d="M 220,225 Q 161,214 150,156 Q 139,97 208,166 Q 278,236 220,225 Z"
+        fill="#F59E0B" fill-opacity="0.18" stroke="#F59E0B" stroke-width="1.5" stroke-opacity="0.35"/>
+  <!-- Hyperedge 4: G, H, A (violet) -->
+  <path d="M 150,94 Q 161,36 220,25 Q 278,14 208,84 Q 139,153 150,94 Z"
+        fill="#8B5CF6" fill-opacity="0.18" stroke="#8B5CF6" stroke-width="1.5" stroke-opacity="0.35"/>
+
+  <!-- Non-IS vertices (gray) -->
+  <circle cx="250" cy="35" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+  <circle cx="340" cy="125" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+  <circle cx="250" cy="215" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+  <circle cx="160" cy="125" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+
+  <!-- Strong independent set vertices (Heidelberg red) -->
+  <circle cx="314" cy="61" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
+  <circle cx="314" cy="189" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
+  <circle cx="186" cy="189" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
+  <circle cx="186" cy="61" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
+
+  <!-- Title -->
+  <text x="250" y="280" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="28" fill="#c1002a">HyperMIS</text>
+</svg>
