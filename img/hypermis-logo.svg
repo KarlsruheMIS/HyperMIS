@@ -1,30 +1,131 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300" width="500" height="300">
-  <!-- Hyperedge 1: A, B, C (blue) -->
-  <path d="M 280,25 Q 339,36 350,94 Q 361,153 292,84 Q 222,14 280,25 Z"
-        fill="#3B82F6" fill-opacity="0.18" stroke="#3B82F6" stroke-width="1.5" stroke-opacity="0.35"/>
-  <!-- Hyperedge 2: C, D, E (emerald) -->
-  <path d="M 350,156 Q 339,214 280,225 Q 222,236 292,166 Q 361,97 350,156 Z"
-        fill="#10B981" fill-opacity="0.18" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.35"/>
-  <!-- Hyperedge 3: E, F, G (amber) -->
-  <path d="M 220,225 Q 161,214 150,156 Q 139,97 208,166 Q 278,236 220,225 Z"
-        fill="#F59E0B" fill-opacity="0.18" stroke="#F59E0B" stroke-width="1.5" stroke-opacity="0.35"/>
-  <!-- Hyperedge 4: G, H, A (violet) -->
-  <path d="M 150,94 Q 161,36 220,25 Q 278,14 208,84 Q 139,153 150,94 Z"
-        fill="#8B5CF6" fill-opacity="0.18" stroke="#8B5CF6" stroke-width="1.5" stroke-opacity="0.35"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1923"/>
+      <stop offset="100%" stop-color="#1a2332"/>
+    </linearGradient>
 
-  <!-- Non-IS vertices (gray) -->
-  <circle cx="250" cy="35" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
-  <circle cx="340" cy="125" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
-  <circle cx="250" cy="215" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
-  <circle cx="160" cy="125" r="12" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+    <!-- Glow filters for IS vertices -->
+    <filter id="glow-coral" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#ef5350" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#42a5f5" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#66bb6a" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#ffca28" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
 
-  <!-- Strong independent set vertices (Heidelberg red) -->
-  <circle cx="314" cy="61" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
-  <circle cx="314" cy="189" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
-  <circle cx="186" cy="189" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
-  <circle cx="186" cy="61" r="12" fill="#c1002a" stroke="#991b1b" stroke-width="2"/>
+    <style>
+      @keyframes pulse {
+        0%, 100% { opacity: 0.85; r: 10; }
+        50% { opacity: 1; r: 13; }
+      }
+      .node-is { animation: pulse 3s ease-in-out infinite; }
+      .is1 { animation-delay: 0s; }
+      .is2 { animation-delay: 0.75s; }
+      .is3 { animation-delay: 1.5s; }
+      .is4 { animation-delay: 2.25s; }
+    </style>
+  </defs>
 
-  <!-- Title -->
-  <text x="250" y="280" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="28" fill="#c1002a">HyperMIS</text>
+  <!-- Background -->
+  <rect width="900" height="260" rx="16" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="0.5">
+    <line x1="0" y1="52" x2="900" y2="52"/>
+    <line x1="0" y1="104" x2="900" y2="104"/>
+    <line x1="0" y1="156" x2="900" y2="156"/>
+    <line x1="0" y1="208" x2="900" y2="208"/>
+  </g>
+
+  <!-- Left: Title -->
+  <text x="50" y="95" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="56" font-weight="700" fill="#e0e0e0" letter-spacing="2">
+    <tspan fill="#c1002a">Hyper</tspan><tspan fill="#78909c">MIS</tspan>
+  </text>
+  <text x="50" y="130" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#90a4ae">
+    Maximum Independent Sets on Hypergraphs
+  </text>
+  <text x="50" y="155" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#607d8b">
+    Heidelberg University
+  </text>
+
+  <!-- Badges -->
+  <rect x="50" y="178" width="65" height="24" rx="12" fill="#263238"/>
+  <text x="82" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">C++17</text>
+
+  <rect x="125" y="178" width="80" height="24" rx="12" fill="#263238"/>
+  <text x="165" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">GUROBI</text>
+
+  <rect x="215" y="178" width="90" height="24" rx="12" fill="#263238"/>
+  <text x="260" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">ILP Solver</text>
+
+  <!-- Right side: Hypergraph visualization -->
+
+  <!-- Hyperedge blobs (semi-transparent on dark bg) -->
+  <!-- Edge 1: A, B, C (blue) -->
+  <path d="M 702,42 Q 753,52 763,103 Q 773,154 712,93 Q 651,32 702,42 Z"
+        fill="#42a5f5" fill-opacity="0.12" stroke="#42a5f5" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Edge 2: C, D, E (teal) -->
+  <path d="M 763,157 Q 753,208 702,218 Q 651,228 712,167 Q 773,106 763,157 Z"
+        fill="#26c6da" fill-opacity="0.12" stroke="#26c6da" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Edge 3: E, F, G (orange) -->
+  <path d="M 648,218 Q 597,208 587,157 Q 577,106 638,167 Q 699,228 648,218 Z"
+        fill="#ffa726" fill-opacity="0.12" stroke="#ffa726" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Edge 4: G, H, A (purple) -->
+  <path d="M 587,103 Q 597,52 648,42 Q 699,32 638,93 Q 577,154 587,103 Z"
+        fill="#ab47bc" fill-opacity="0.12" stroke="#ab47bc" stroke-width="1" stroke-opacity="0.25"/>
+
+  <!-- Pairwise lines within hyperedges (subtle) -->
+  <g stroke="#546e7a" stroke-width="1.5" opacity="0.25">
+    <!-- Edge 1: A-B, A-C, B-C -->
+    <line x1="675" y1="50" x2="732" y2="73"/>
+    <line x1="675" y1="50" x2="755" y2="130"/>
+    <line x1="732" y1="73" x2="755" y2="130"/>
+    <!-- Edge 2: C-D, C-E, D-E -->
+    <line x1="755" y1="130" x2="732" y2="187"/>
+    <line x1="755" y1="130" x2="675" y2="210"/>
+    <line x1="732" y1="187" x2="675" y2="210"/>
+    <!-- Edge 3: E-F, E-G, F-G -->
+    <line x1="675" y1="210" x2="618" y2="187"/>
+    <line x1="675" y1="210" x2="595" y2="130"/>
+    <line x1="618" y1="187" x2="595" y2="130"/>
+    <!-- Edge 4: G-H, G-A, H-A -->
+    <line x1="595" y1="130" x2="618" y2="73"/>
+    <line x1="595" y1="130" x2="675" y2="50"/>
+    <line x1="618" y1="73" x2="675" y2="50"/>
+  </g>
+
+  <!-- Non-IS vertices (dim) -->
+  <circle cx="675" cy="50" r="7" fill="#546e7a" opacity="0.6"/>
+  <circle cx="755" cy="130" r="7" fill="#546e7a" opacity="0.6"/>
+  <circle cx="675" cy="210" r="7" fill="#546e7a" opacity="0.6"/>
+  <circle cx="595" cy="130" r="7" fill="#546e7a" opacity="0.6"/>
+
+  <!-- IS vertices (bright, glowing, animated) -->
+  <circle class="node-is is1" cx="732" cy="73" r="10" fill="#ef5350" filter="url(#glow-coral)"/>
+  <circle class="node-is is2" cx="732" cy="187" r="10" fill="#42a5f5" filter="url(#glow-blue)"/>
+  <circle class="node-is is3" cx="618" cy="187" r="10" fill="#66bb6a" filter="url(#glow-green)"/>
+  <circle class="node-is is4" cx="618" cy="73" r="10" fill="#ffca28" filter="url(#glow-gold)"/>
+
+  <!-- Bottom text -->
+  <text x="675" y="248" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#546e7a" text-anchor="middle">
+    Data Reductions for Strong Independence on Hypergraphs
+  </text>
 </svg>

@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="./img/hypermis-logo.svg" alt="HyperMIS: Strong independent set (red vertices) in a hypergraph with four hyperedges" width="400"/>
+  <img src="./img/hypermis-logo.svg" alt="HyperMIS: Strong independent set in a hypergraph with four hyperedges" width="900"/>
 </p>
 
 Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
