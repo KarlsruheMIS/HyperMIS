@@ -62,19 +62,15 @@
   <text x="50" y="130" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#90a4ae">
     Maximum Independent Sets on Hypergraphs
   </text>
-  <text x="50" y="155" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#607d8b">
-    Heidelberg University
-  </text>
-
   <!-- Badges -->
-  <rect x="50" y="178" width="65" height="24" rx="12" fill="#263238"/>
-  <text x="82" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">C++17</text>
+  <rect x="50" y="165" width="65" height="24" rx="12" fill="#263238"/>
+  <text x="82" y="181" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">C++17</text>
 
-  <rect x="125" y="178" width="80" height="24" rx="12" fill="#263238"/>
-  <text x="165" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">GUROBI</text>
+  <rect x="125" y="165" width="80" height="24" rx="12" fill="#263238"/>
+  <text x="165" y="181" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">GUROBI</text>
 
-  <rect x="215" y="178" width="90" height="24" rx="12" fill="#263238"/>
-  <text x="260" y="194" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">ILP Solver</text>
+  <rect x="215" y="165" width="90" height="24" rx="12" fill="#263238"/>
+  <text x="260" y="181" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#80cbc4" text-anchor="middle">ILP Solver</text>
 
   <!-- Right side: Hypergraph visualization -->
 
