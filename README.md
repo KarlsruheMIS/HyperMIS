@@ -11,6 +11,7 @@
   <a href="https://github.com/KarlsruheMIS/HyperMIS/commits"><img src="https://img.shields.io/github/last-commit/KarlsruheMIS/HyperMIS" alt="Last Commit"></a>
   <a href="https://arxiv.org/abs/2602.10781"><img src="https://img.shields.io/badge/arXiv-2602.10781-b31b1b.svg" alt="arXiv"></a>
   <a href="https://www.uni-heidelberg.de"><img src="https://img.shields.io/badge/Heidelberg-University-c1002a" alt="Heidelberg University"></a>
+  <a href="https://www.hamilton.edu"><img src="https://img.shields.io/badge/Hamilton-College-002f86" alt="Hamilton College"></a>
 </p>
 
 <p align="center">
