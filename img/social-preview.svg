@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1923"/>
+      <stop offset="100%" stop-color="#1a2332"/>
+    </linearGradient>
+    <filter id="glow-coral" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#ef5350" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#42a5f5" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#66bb6a" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#ffca28" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#ffffff" stroke-width="0.5">
+    <line x1="0" y1="128" x2="1280" y2="128"/>
+    <line x1="0" y1="256" x2="1280" y2="256"/>
+    <line x1="0" y1="384" x2="1280" y2="384"/>
+    <line x1="0" y1="512" x2="1280" y2="512"/>
+  </g>
+
+  <!-- Hypergraph visualization (left side) -->
+  <!-- 8 vertices in regular octagon, center (300,310), radius 200 -->
+  <!-- A(300,110) B(441,169) C(500,310) D(441,451) E(300,510) F(159,451) G(100,310) H(159,169) -->
+
+  <!-- Hyperedge blobs (scaled from banner SVG: center 675,130 r=80 -> center 300,310 r=200) -->
+  <!-- Edge 1: A, B, C (blue) -->
+  <path d="M 367,90 Q 495,115 520,243 Q 545,370 392,218 Q 240,65 367,90 Z"
+        fill="#42a5f5" fill-opacity="0.12" stroke="#42a5f5" stroke-width="1.5" stroke-opacity="0.25"/>
+  <!-- Edge 2: C, D, E (teal) -->
+  <path d="M 520,377 Q 495,505 367,530 Q 240,555 392,402 Q 545,250 520,377 Z"
+        fill="#26c6da" fill-opacity="0.12" stroke="#26c6da" stroke-width="1.5" stroke-opacity="0.25"/>
+  <!-- Edge 3: E, F, G (orange) -->
+  <path d="M 232,530 Q 105,505 80,377 Q 55,250 207,402 Q 360,555 232,530 Z"
+        fill="#ffa726" fill-opacity="0.12" stroke="#ffa726" stroke-width="1.5" stroke-opacity="0.25"/>
+  <!-- Edge 4: G, H, A (purple) -->
+  <path d="M 80,243 Q 105,115 232,90 Q 360,65 207,218 Q 55,370 80,243 Z"
+        fill="#ab47bc" fill-opacity="0.12" stroke="#ab47bc" stroke-width="1.5" stroke-opacity="0.25"/>
+
+  <!-- Pairwise lines within hyperedges (subtle) -->
+  <g stroke="#546e7a" stroke-width="1.5" opacity="0.25">
+    <!-- Edge 1: A-B, A-C, B-C -->
+    <line x1="300" y1="110" x2="441" y2="169"/>
+    <line x1="300" y1="110" x2="500" y2="310"/>
+    <line x1="441" y1="169" x2="500" y2="310"/>
+    <!-- Edge 2: C-D, C-E, D-E -->
+    <line x1="500" y1="310" x2="441" y2="451"/>
+    <line x1="500" y1="310" x2="300" y2="510"/>
+    <line x1="441" y1="451" x2="300" y2="510"/>
+    <!-- Edge 3: E-F, E-G, F-G -->
+    <line x1="300" y1="510" x2="159" y2="451"/>
+    <line x1="300" y1="510" x2="100" y2="310"/>
+    <line x1="159" y1="451" x2="100" y2="310"/>
+    <!-- Edge 4: G-H, G-A, H-A -->
+    <line x1="100" y1="310" x2="159" y2="169"/>
+    <line x1="100" y1="310" x2="300" y2="110"/>
+    <line x1="159" y1="169" x2="300" y2="110"/>
+  </g>
+
+  <!-- Non-IS vertices (dim) -->
+  <circle cx="300" cy="110" r="10" fill="#546e7a" opacity="0.6"/>
+  <circle cx="500" cy="310" r="10" fill="#546e7a" opacity="0.6"/>
+  <circle cx="300" cy="510" r="10" fill="#546e7a" opacity="0.6"/>
+  <circle cx="100" cy="310" r="10" fill="#546e7a" opacity="0.6"/>
+
+  <!-- IS vertices (bright, glowing) - one per hyperedge -->
+  <circle cx="441" cy="169" r="14" fill="#ef5350" filter="url(#glow-coral)"/>
+  <circle cx="441" cy="451" r="14" fill="#42a5f5" filter="url(#glow-blue)"/>
+  <circle cx="159" cy="451" r="14" fill="#66bb6a" filter="url(#glow-green)"/>
+  <circle cx="159" cy="169" r="14" fill="#ffca28" filter="url(#glow-gold)"/>
+
+  <!-- Title -->
+  <text x="660" y="210" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="76" font-weight="700">
+    <tspan fill="#c1002a">Hyper</tspan><tspan fill="#78909c">MIS</tspan>
+  </text>
+
+  <!-- Separator -->
+  <line x1="660" y1="235" x2="1220" y2="235" stroke="#334155" stroke-width="2"/>
+
+  <!-- Subtitle -->
+  <text x="660" y="278" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" fill="#90a4ae">
+    Maximum Independent Sets
+  </text>
+  <text x="660" y="312" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" fill="#90a4ae">
+    on Hypergraphs
+  </text>
+
+  <!-- Tagline -->
+  <text x="660" y="375" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" fill="#607d8b">
+    ILP-based exact solver with data
+  </text>
+  <text x="660" y="403" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" fill="#607d8b">
+    reduction preprocessing
+  </text>
+
+  <!-- Badge: Part of KarlsruheMIS -->
+  <rect x="660" y="440" width="190" height="30" rx="15" fill="#263238"/>
+  <text x="755" y="460" font-family="'DejaVu Sans', sans-serif" font-size="14" fill="#80cbc4" text-anchor="middle">Part of KarlsruheMIS</text>
+
+  <!-- Legend -->
+  <circle cx="670" cy="540" r="8" fill="#ef5350" filter="url(#glow-coral)"/>
+  <text x="686" y="545" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#94a3b8">IS vertex</text>
+
+  <circle cx="790" cy="540" r="7" fill="#546e7a" opacity="0.6"/>
+  <text x="804" y="545" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#94a3b8">non-IS</text>
+
+  <rect x="880" y="533" width="20" height="14" rx="3" fill="#42a5f5" fill-opacity="0.15" stroke="#42a5f5" stroke-width="1" stroke-opacity="0.3"/>
+  <text x="908" y="545" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#94a3b8">hyperedge</text>
+
+  <!-- Bottom text -->
+  <text x="300" y="610" text-anchor="middle" font-family="'DejaVu Sans', sans-serif" font-size="14" fill="#546e7a">
+    data reductions for strong independence on hypergraphs
+  </text>
+</svg>
