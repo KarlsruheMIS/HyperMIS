@@ -4,6 +4,7 @@
 #include <cstddef> 
 
 extern size_t VERBOSE;
+extern size_t EXPERIMENT;
 extern size_t REDUCE;
 extern size_t NUM_THREADS;
 
@@ -17,11 +18,6 @@ extern size_t EDGE_SIZE;
 extern size_t TWIN_NEIGHBORHOOD;
 extern size_t SUNFLOWER_NEIGHBORHOOD;
 
-extern size_t HEURISTIC_RED;
-extern size_t H_EXCLUDE;
 
-extern size_t GREEDY_SIZE;
-extern size_t GREEDY_DEGREE;
-extern size_t RP;
 
 #endif // CONFIG_H

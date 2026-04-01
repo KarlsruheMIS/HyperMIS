@@ -1,6 +1,6 @@
 #include <memory>
 #include <iostream>
-#include <filesystem>  // C++17 erforderlich
+#include <filesystem> // C++17 erforderlich
 #include <string>
 #include <cstdlib>
 #include <cassert>
@@ -12,18 +12,17 @@
 #include "reductions.h"
 #include "hypergraph.h"
 
-
 const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Independent Set problem on Hypergraphs\n"
                    "\nThe output of the program without -v is a single line on the form:\n"
                    "instance_name,#vertices,#edges,average_edge_size,#reduced_vertices,#reduced_edges,reduced_avg_edge_size,offset,time,seed\n"
                    "\n-h \t\tDisplay this help message\n"
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
+                   "-e \t\tExperiment mode, output reduction statistics to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-k sec \t\tTimout in seconds for reduction preprocessing \t\t\t\t default 3600 seconds\n"
                    "-s \tUser specific seed\n"
                    "-o path \tPath to the solution\n"
-                   "-p \tPowerfull reduction configuration (slower)\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -32,15 +31,13 @@ int main(int argc, char **argv)
          *solution_path = NULL;
     double timeout = 3600;
 
-
     unsigned int seed = time(NULL);
 
     int command;
 
-    std::string name; 
-    std::string config="KFast";
+    std::string name;
 
-    while ((command = getopt(argc, argv, "hvpg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hveg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
@@ -50,14 +47,8 @@ int main(int argc, char **argv)
         case 'v':
             VERBOSE = 1;
             break;
-        case 'p':
-            UNCONFINED_REDUCE = 1;
-            TIME_KERNEL_SECONDS = 100;
-            NUM_REMOVED_EDGES = 1000000;
-            CONSTANT_UNCONFINED = 5;
-            ITERATIONS_UNCONFINED = 20000;
-            EDGE_SIZE = 5000;
-            config="KStrong";
+        case 'e':
+            EXPERIMENT = 1;
             break;
         case 'g':
             hypergraph_path = optarg;
@@ -83,53 +74,59 @@ int main(int argc, char **argv)
         }
     }
 
-
     if (hypergraph_path == nullptr)
     {
         std::cerr << "Error: Unable to open file " << std::endl;
         return 1;
     }
 
-    FILE* hgr_file = fopen(hypergraph_path, "r");
-    if (!hgr_file) {
+    FILE *hgr_file = fopen(hypergraph_path, "r");
+    if (!hgr_file)
+    {
         std::cerr << "Error: Unable to open file " << hypergraph_path << std::endl;
         return 1;
     }
-    hypergraph* g = hypergraph_parse(hgr_file);
+    hypergraph *g = hypergraph_parse(hgr_file);
     fclose(hgr_file);
     double original_avg_e_size = 0.0;
     for (NodeID e = 0; e < g->m; e++)
-        original_avg_e_size+= g->Ed[e];
+        original_avg_e_size += g->Ed[e];
     original_avg_e_size = original_avg_e_size / g->m;
 
-
     // assert(hypergraph_validate(g));
-    MISH_algorithm* mis_alg = new MISH_algorithm(g);
+    MISH_algorithm *mis_alg = new MISH_algorithm(g);
     hypergraph_build_neighbors(g, &(mis_alg->node_set));
 
     mis_alg->reduce_graph();
 
-    std::vector<int> reduced(mis_alg->status.n,1);
+    std::vector<int> reduced(mis_alg->status.n, 1);
     for (NodeID v = 0; v < g->n; v++)
     {
-        if (mis_alg->status.node_status[v]== MISH_algorithm::IS_status::not_set)
-            reduced[v]=0;
+        if (mis_alg->status.node_status[v] == MISH_algorithm::IS_status::not_set)
+            reduced[v] = 0;
     }
     std::vector<NodeID> map;
     std::vector<NodeID> remap;
     remap.reserve(mis_alg->status.remaining_nodes);
     map.reserve(mis_alg->status.n);
 
-    hypergraph* rg = hypergraph_build_reduced(g, map.data(), remap.data(), reduced.data());
+    hypergraph *rg = hypergraph_build_reduced(g, map.data(), remap.data(), reduced.data());
     // assert(hypergraph_validate(rg));
     std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
 
     double avg_e_size = 0.0;
     for (NodeID e = 0; e < rg->m; e++)
-        avg_e_size+= rg->Ed[e];
+        avg_e_size += rg->Ed[e];
     avg_e_size = avg_e_size / (rg->m);
 
-    std::cout << name << ",reduce"<<config<<","<< g->n <<"," << g->m << "," << original_avg_e_size << ","<< rg->n << "," << rg->m << "," << avg_e_size << "," <<mis_alg->status.IS_size << "," << time.count()  << "," << seed  << std::endl;
+    if (EXPERIMENT)
+    {
+        for (int i = 0; i < mis_alg->status.reductions.size() ; i++)
+            std::cout <<name<< "," << mis_alg->n_reduced[i]<< ","<< mis_alg->m_reduced[i]<< "," << mis_alg->t_reduced[i]<< "," << mis_alg->status.reductions[i]->get_reduction_name()<< std::endl;
+        std::cout <<name<<"," << mis_alg->n_reduced[REDUCTION_NUM]<< ","<< mis_alg->m_reduced[REDUCTION_NUM]<< "," << mis_alg->t_reduced[REDUCTION_NUM]<< "," << "edge_domination"<< std::endl;
+    }
+
+    std::cout << name << ",reduce" << "," << g->n << "," << g->m << "," << original_avg_e_size << "," << rg->n << "," << rg->m << "," << avg_e_size << "," << mis_alg->status.IS_size << "," << time.count() << "," << seed << std::endl;
 
     if (solution_path)
         writeGraphToFile(rg, solution_path);

@@ -35,9 +35,8 @@ int main(int argc, char **argv)
     unsigned int seed = time(NULL);
     int command;
     std::string name;
-    std::string config = "KFast";
 
-    while ((command = getopt(argc, argv, "hvprg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hvrg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
@@ -46,16 +45,6 @@ int main(int argc, char **argv)
             return 0;
         case 'v':
             VERBOSE = 1;
-            break;
-        case 'p':
-            REDUCE = 1;
-            UNCONFINED_REDUCE = 1;
-            TIME_KERNEL_SECONDS = 100;
-            NUM_REMOVED_EDGES = 1000000;
-            CONSTANT_UNCONFINED = 5;
-            ITERATIONS_UNCONFINED = 20000;
-            EDGE_SIZE = 5000;
-            config = "KStrong";
             break;
         case 'g':
             hypergraph_path = optarg;
@@ -121,7 +110,7 @@ int main(int argc, char **argv)
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
             size += ILP_solution.first;
             // assert(verifier(rg, red_sol));
-            std::cout << name << ",ILP" << config << "," << size << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
+            std::cout << name << ",ILP" << "," << size << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
 
             // remap reduced_solution
             for (int i = 0; i < red_sol.size(); ++i)
@@ -137,7 +126,7 @@ int main(int argc, char **argv)
         else
         {
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
-            std::cout << name << ",ILP" << config << "," << size << "," << time.count() << ",1," << seed << std::endl;
+            std::cout << name << ",ILP" << "," << size << "," << time.count() << ",1," << seed << std::endl;
         }
 
         // add reduced vertices to the solution
