@@ -70,7 +70,7 @@ The output without the `-v` option is a single CSV line:
 ```
 instance_name,algo,#vertices,#edges,avg_edge_size,#vertices_reduced,#edges_reduced,avg_edge_size_reduced,offset,time,seed
 ```
-The output without the `-e` option is a CSV line per reduction:
+The output with the `-e` option is a CSV line per reduction:
 ```
 instance_name,seed,#reduced_vertices,#reduced_edges,time,reduction_name
 ```
