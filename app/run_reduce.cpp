@@ -123,11 +123,11 @@ int main(int argc, char **argv)
     {
         for (int i = 0; i < mis_alg->status.reductions.size(); i++)
             std::cout << name << "," << seed << "," << mis_alg->n_reduced[i] << "," << mis_alg->m_reduced[i] << "," << mis_alg->t_reduced[i] << "," << mis_alg->status.reductions[i]->get_reduction_name() << std::endl;
-        std::cout << name << "," << "," << seed << mis_alg->n_reduced[REDUCTION_NUM] << "," << mis_alg->m_reduced[REDUCTION_NUM] << "," << mis_alg->t_reduced[REDUCTION_NUM] << "," << "edge_domination" << std::endl;
+        std::cout << name << "," << seed << "," << mis_alg->n_reduced[REDUCTION_NUM] << "," << mis_alg->m_reduced[REDUCTION_NUM] << "," << mis_alg->t_reduced[REDUCTION_NUM] << "," << "edge_domination" << std::endl;
     }
     else
     {
-        std::cout << name << ",reduce" << "," << g->n << "," << g->m << "," << original_avg_e_size << "," << rg->n << "," << rg->m << "," << avg_e_size << "," << mis_alg->status.IS_size << "," << time.count() << "," << seed << std::endl;
+        std::cout << name << ",reduce," << g->n << "," << g->m << "," << original_avg_e_size << "," << rg->n << "," << rg->m << "," << avg_e_size << "," << mis_alg->status.IS_size << "," << time.count() << "," << seed << std::endl;
     }
 
     if (solution_path)
