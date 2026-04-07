@@ -3,7 +3,7 @@
 res=results
 hypergraphs=../../test_instances/hypergraphs
 
-red_file=$res/RED/stats.csv
+red_file="$res/RED/stats.csv"
 
 t=3600
 n=20
