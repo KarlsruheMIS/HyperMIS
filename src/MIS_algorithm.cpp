@@ -126,8 +126,7 @@ void MISH_algorithm::reduce_graph()
                     prev_m = status.remaining_edges;
 
                     if (VERBOSE)
-                        // std::cout << n_reduced[reduction->get_reduction_type()] << " \t" << m_reduced[reduction->get_reduction_type()] << " \t" << t_reduced[reduction->get_reduction_type()] << "\t" << reduction->get_reduction_name() << std::endl;
-                        std::cout << n_reduced[reduction->get_reduction_type()] << " \t" << m_reduced[reduction->get_reduction_type()] << " \t" << t_reduced[reduction->get_reduction_type()] << "\t" << reduction->get_reduction_name() << status.remaining_nodes << "," << status.remaining_edges << std::endl;
+                        std::cout << n_reduced[reduction->get_reduction_type()] << " \t" << m_reduced[reduction->get_reduction_type()] << " \t" << t_reduced[reduction->get_reduction_type()] << "\t" << reduction->get_reduction_name() << std::endl;
                     break;
                 }
             }
