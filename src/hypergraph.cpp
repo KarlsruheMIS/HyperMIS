@@ -52,7 +52,7 @@ static inline void parse_unsigned_int(FILE *f, int *v)
 
 static inline int hypergraph_compare(const void *a, const void *b)
 {
-    return (*static_cast<const NodeID*>(a) - *static_cast<const NodeID*>(b));
+    return (*static_cast<const NodeID *>(a) - *static_cast<const NodeID *>(b));
 }
 
 static inline NodeID lower_bound(const NodeID *A, NodeID n, NodeID x)
@@ -89,9 +89,9 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     g->Ea = new NodeID[m];
     g->Nd = new NodeID[n];
     g->Na = new NodeID[n];
-    g->V = new NodeID*[n];
-    g->N = new NodeID*[n];
-    g->E = new NodeID*[m];
+    g->V = new NodeID *[n];
+    g->N = new NodeID *[n];
+    g->E = new NodeID *[m];
 
     for (NodeID i = 0; i < n; i++)
     {
@@ -256,34 +256,34 @@ bool hypergraph_validate_edge(hypergraph *g, NodeID e)
 
 bool hypergraph_validate_vertex(hypergraph *g, NodeID u)
 {
-        for (NodeID i = 0; i < g->Vd[u]; i++)
-        {
-            NodeID e = g->V[u][i];
-            if (e >= g->m || g->Va[u] < g->Vd[u])
-                return 0;
-            if (i > 0 && e <= g->V[u][i - 1])
-                return 0;
+    for (NodeID i = 0; i < g->Vd[u]; i++)
+    {
+        NodeID e = g->V[u][i];
+        if (e >= g->m || g->Va[u] < g->Vd[u])
+            return 0;
+        if (i > 0 && e <= g->V[u][i - 1])
+            return 0;
 
-            NodeID p = lower_bound(g->E[e], g->Ed[e], u);
-            if (p == g->Ed[e] || g->E[e][p] != u)
-                return 0;
-        }
+        NodeID p = lower_bound(g->E[e], g->Ed[e], u);
+        if (p == g->Ed[e] || g->E[e][p] != u)
+            return 0;
+    }
 
-        for (NodeID i = 0; i < g->Nd[u]; i++)
-        {
-            NodeID v = g->N[u][i];
-            if (v == u)
-                return 0;
-            if (v >= g->n || g->Na[u] < g->Nd[u])
-                return 0;
-            if (i > 0 && v <= g->N[u][i - 1])
-                return 0;
+    for (NodeID i = 0; i < g->Nd[u]; i++)
+    {
+        NodeID v = g->N[u][i];
+        if (v == u)
+            return 0;
+        if (v >= g->n || g->Na[u] < g->Nd[u])
+            return 0;
+        if (i > 0 && v <= g->N[u][i - 1])
+            return 0;
 
-            NodeID p = lower_bound(g->N[u], g->Nd[u], v);
-            if (p == g->Nd[u] || g->N[u][p] != v)
-                return 0;
-        }
-        return 1;
+        NodeID p = lower_bound(g->N[u], g->Nd[u], v);
+        if (p == g->Nd[u] || g->N[u][p] != v)
+            return 0;
+    }
+    return 1;
 }
 
 bool hypergraph_validate(hypergraph *g)
@@ -298,7 +298,6 @@ bool hypergraph_validate(hypergraph *g)
 
     return 1;
 }
-
 
 void hypergraph_remove_vertex(hypergraph *g, NodeID u)
 {
@@ -398,7 +397,6 @@ void hypergraph_remove_neighbors(hypergraph *g, NodeID u, fast_set *fs, fast_set
 
                 g->Nd[z] = N_size;
 
-
                 NodeID E_size = 0;
                 for (NodeID k = 0; k < g->Vd[z]; k++)
                 {
@@ -407,7 +405,6 @@ void hypergraph_remove_neighbors(hypergraph *g, NodeID u, fast_set *fs, fast_set
                 }
                 for (NodeID k = 0; k < E_size; k++)
                     g->V[z][k] = new_N[k];
-
 
                 g->Vd[z] = E_size;
 
@@ -432,7 +429,33 @@ void hypergraph_remove_neighbors(hypergraph *g, NodeID u, fast_set *fs, fast_set
     g->Nd[u] = 0;
     g->Na[u] = MIN_ALLOC;
     g->N[u] = (NodeID *)realloc(g->N[u], sizeof(NodeID) * g->Na[u]);
+}
 
+void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *fs, bool dominated)
+{
+
+    fs->clear();
+    for (NodeID e = 0; e < e_size; e++)
+        fs->add(E[e]);
+
+    for (NodeID v = 0; v < g->n; v++)
+    {
+        int e_idx = 0;
+        for (NodeID i = 0; i < g->Vd[v]; i++)
+        {
+            NodeID e = g->V[v][i];
+            if (!fs->get(e))
+                g->V[v][e_idx++] = e;
+        }
+        g->Vd[v]=e_idx;
+    }
+
+    if (dominated)
+    { // in this case neighborhood does not change
+        for (NodeID i = 0; i < e_size; i++)
+            g->Ed[E[i]] = 0;
+        return;
+    }
 }
 
 void hypergraph_remove_edge(hypergraph *g, NodeID e, fast_set *fs, bool dominated)
@@ -450,8 +473,6 @@ void hypergraph_remove_edge(hypergraph *g, NodeID e, fast_set *fs, bool dominate
     if (dominated)
     { // in this case neighborhood does not change
         g->Ed[e] = 0;
-        g->Ea[e] = MIN_ALLOC;
-        g->E[e] = (NodeID *)realloc(g->E[e], sizeof(NodeID) * g->Ea[e]);
         return;
     }
 
@@ -485,8 +506,6 @@ void hypergraph_remove_edge(hypergraph *g, NodeID e, fast_set *fs, bool dominate
     }
 
     g->Ed[e] = 0;
-    g->Ea[e] = MIN_ALLOC;
-    g->E[e] = (NodeID *)realloc(g->E[e], sizeof(NodeID) * g->Ea[e]);
 }
 
 bool hypergraph_is_neighbor(hypergraph *g, NodeID v, NodeID neighbor)
@@ -554,16 +573,15 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     return rg;
 }
 
-
 hypergraph *hypergraph_copy(hypergraph *g)
 {
     hypergraph *c = new hypergraph;
 
     *c = (hypergraph){.n = g->n, .m = g->m};
 
-    c->Vd = new NodeID[c->n]; 
+    c->Vd = new NodeID[c->n];
     c->Va = new NodeID[c->n];
-    c->V  = new NodeID*[c->n];
+    c->V = new NodeID *[c->n];
 
     for (NodeID i = 0; i < c->n; i++)
     {
@@ -577,7 +595,7 @@ hypergraph *hypergraph_copy(hypergraph *g)
 
     c->Nd = new NodeID[c->n];
     c->Na = new NodeID[c->n];
-    c->N  = new NodeID*[c->n];
+    c->N = new NodeID *[c->n];
 
     for (NodeID i = 0; i < c->n; i++)
     {
@@ -591,7 +609,7 @@ hypergraph *hypergraph_copy(hypergraph *g)
 
     c->Ed = new NodeID[c->m];
     c->Ea = new NodeID[c->m];
-    c->E = new NodeID*[c->m];
+    c->E = new NodeID *[c->m];
 
     for (NodeID i = 0; i < c->m; i++)
     {

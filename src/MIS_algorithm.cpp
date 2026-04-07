@@ -227,19 +227,19 @@ bool MISH_algorithm::remove_dominating_edges()
 {
     auto g = status.hgraph;
     NodeID old_e = status.remaining_edges;
+    std::vector<NodeID> dominated_edges;
+    dominated_edges.reserve(old_e);
 
-    // for (NodeID i = 0; i < edge_marker.current_size(); ++i)
-    // {
-    //     NodeID e = edge_marker.current_element(i);
-
-    for (NodeID e = 0; e < status.hgraph->m; ++e)
+    for (NodeID i = 0; i < edge_marker.current_size(); ++i)
     {
+        NodeID e = edge_marker.current_element(i);
+
         if (g->Ed[e] > EDGE_SIZE || !status.edge_status[e])
             continue;
 
         if (g->Ed[e] <= 1)
         {
-            hypergraph_remove_edge(g, e, &node_set, true);
+            dominated_edges.push_back(e);
             status.remaining_edges--;
             status.edge_status[e] = false;
             continue;
@@ -294,15 +294,17 @@ bool MISH_algorithm::remove_dominating_edges()
             if (is_dominated)
             {
                 add_next_level_nodes_of_edge(net1);
-                hypergraph_remove_edge(g, net1, &node_set, true);
+                dominated_edges.push_back(net1);
                 status.remaining_edges--;
                 status.edge_status[net1] = false;
                 break;
             }
         }
 
-        if (old_e - status.remaining_edges >= NUM_REMOVED_EDGES)
-            break;
     }
+
+    if (dominated_edges.size() > 0)
+        hypergraph_remove_edges(g, dominated_edges.data(), dominated_edges.size(), &edge_set, true);
+
     return old_e != status.remaining_edges;
 }
