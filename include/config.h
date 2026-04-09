@@ -13,7 +13,6 @@ extern size_t NEIGHBORS_SIZE;
 extern size_t NUM_REMOVED_EDGES;
 extern size_t ITERATIONS_UNCONFINED;
 extern size_t CONSTANT_UNCONFINED;
-extern size_t UNCONFINED_REDUCE;
 extern size_t EDGE_SIZE;
 extern size_t TWIN_NEIGHBORHOOD;
 extern size_t SUNFLOWER_NEIGHBORHOOD;
