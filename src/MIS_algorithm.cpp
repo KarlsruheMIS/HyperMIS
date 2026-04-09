@@ -267,7 +267,7 @@ bool MISH_algorithm::remove_dominating_edges()
         for (NodeID j = 0; j < g->Vd[minPin]; j++)
         {
             NodeID net2 = g->V[minPin][j];
-            if (net2 == net1 || g->Ed[net2] < g->Ed[net1])
+            if (net2 == net1 || g->Ed[net2] < g->Ed[net1] || status.edge_status[net2] != IS_status::not_set)
                 continue;
             // check if all hypernodes of net1 are contained in net2
             is_dominated = true;
@@ -300,7 +300,6 @@ bool MISH_algorithm::remove_dominating_edges()
                 break;
             }
         }
-
     }
 
     if (dominated_edges.size() > 0)

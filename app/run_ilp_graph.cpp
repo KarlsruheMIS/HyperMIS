@@ -22,7 +22,6 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tPath to store the best solution found \t\t default not stored\n"
-                   "-r \t\t Use reduction preprocessing" 
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
@@ -39,7 +38,7 @@ int main(int argc, char **argv)
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hvprg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hvpg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
