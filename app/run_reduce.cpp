@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
     if (EXPERIMENT)
     {
-        std::cout <<"\t"<< rg->n << "\t" << rg->m << "\t" << time.count() << std::endl;
+        std::cout <<"\t"<< rg->n << "\t" << rg->m << std::endl;
 
 
         for (int i = 0; i < mis_alg->status.reductions.size(); i++)

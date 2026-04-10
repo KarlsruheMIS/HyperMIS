@@ -114,7 +114,8 @@ void MISH_algorithm::reduce_graph()
 
             active_reduction_index = reduction_map[reduction->get_reduction_type()];
             if (!status.reductions[active_reduction_index]->has_run && EXPERIMENT)
-                std::cout << "\t"<<status.remaining_nodes << " \t" << status.remaining_edges << " \t" << elapsed/1000 << "\n" << reduction->get_reduction_name() ;
+                std::cout << "\t" << status.remaining_nodes << " \t" << status.remaining_edges << "\n"
+                          << reduction->get_reduction_name();
 
             init_reduction_step();
             progress = reduction->reduce(this);
@@ -148,6 +149,10 @@ void MISH_algorithm::reduce_graph()
             }
             else
             {
+                if (EXPERIMENT)
+                {
+                    std::cout << "\t" << status.remaining_nodes << " \t" << status.remaining_edges << "\nedge_domination";
+                }
                 edge_marker.fill_current_ascending(status.m);
                 edge_marker.clear_next();
                 edge_run = true;
