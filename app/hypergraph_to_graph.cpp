@@ -36,11 +36,11 @@ void clique_expansion_to_file(hypergraph *g, std::string filename)
         m_graph += g->Nd[v];
     }
 
-    outFile << n << " " << m_graph / 2 << " 10";
+    outFile << n << " " << m_graph / 2 << "\n";
 
     for (NodeID v = 0; v < n; v++)
     {
-        outFile << "\n 1 "; // for adding weights 1
+        // outFile << "1 "; // for adding weights 1
         for (NodeID i = 0; i < g->Nd[v]; i++)
         {
             NodeID u = g->N[v][i];
@@ -48,6 +48,7 @@ void clique_expansion_to_file(hypergraph *g, std::string filename)
                 std::cout << "error!" << std::endl;
             outFile << u + 1 << " ";
         }
+        outFile << "\n"; // for adding weights 1
     }
     outFile.close();
 }
