@@ -121,6 +121,9 @@ int main(int argc, char **argv)
 
     if (EXPERIMENT)
     {
+        std::cout <<"\t"<< rg->n << "\t" << rg->m << "\t" << time.count() << std::endl;
+
+
         for (int i = 0; i < mis_alg->status.reductions.size(); i++)
             std::cout << name << "," << seed << "," << mis_alg->n_reduced[i] << "," << mis_alg->m_reduced[i] << "," << mis_alg->t_reduced[i] << "," << mis_alg->status.reductions[i]->get_reduction_name() << std::endl;
         std::cout << name << "," << seed << "," << mis_alg->n_reduced[REDUCTION_NUM] << "," << mis_alg->m_reduced[REDUCTION_NUM] << "," << mis_alg->t_reduced[REDUCTION_NUM] << "," << "edge_domination" << std::endl;

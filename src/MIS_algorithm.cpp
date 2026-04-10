@@ -95,6 +95,8 @@ void MISH_algorithm::reduce_graph()
 {
     bool progress = false;
     bool edge_run = false;
+    if (EXPERIMENT)
+        std::cout << "graph";
 
     do
     {
@@ -105,11 +107,15 @@ void MISH_algorithm::reduce_graph()
 
         for (auto &reduction : status.reductions)
         {
+
             double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
             if (elapsed > TIME_KERNEL_SECONDS * 1000)
                 break;
 
             active_reduction_index = reduction_map[reduction->get_reduction_type()];
+            if (!status.reductions[active_reduction_index]->has_run && EXPERIMENT)
+                std::cout << "\t"<<status.remaining_nodes << " \t" << status.remaining_edges << " \t" << elapsed/1000 << "\n" << reduction->get_reduction_name() ;
+
             init_reduction_step();
             progress = reduction->reduce(this);
 
