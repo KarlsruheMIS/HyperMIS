@@ -6,8 +6,9 @@
 
 typedef struct
 {
-    NodeID n, m;
-    NodeID *V, *E;
+    long long n, m;
+    long long *V;
+    NodeID *E;
 } graph;
 
 graph *graph_parse(FILE *f);
