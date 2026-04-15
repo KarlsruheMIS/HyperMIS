@@ -20,6 +20,8 @@
 
 Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
 
+> **Python Interface:** An easy-to-use Python interface for this software is available in [CHSZLabLib](https://github.com/CHSZLab/CHSZLabLib).
+
 ## Description
 
 Given a hypergraph $H = (V, \mathcal{E})$, a **strong independent set** is a subset $S \subseteq V$ such that each hyperedge contains **at most one** vertex from $S$. Finding a maximum strong independent set is NP-hard. HyperMIS provides an ILP-based exact solver with data reduction preprocessing that shrinks instances to approximately 22% of their original size, achieving average speedups of 3.84&times; and up to 53&times; on real-world instances.
