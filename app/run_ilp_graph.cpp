@@ -23,8 +23,10 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tPath to store the best solution found \t\t default not stored\n"
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
+                   "-r \t\tNo reduction preprocessing\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
+                   "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -38,13 +40,16 @@ int main(int argc, char **argv)
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hvpg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hnrvpg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
         case 'h':
             printf("%s\n", help);
             return 0;
+        case 'n':
+            USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
         case 'v':
             VERBOSE = 1;
             break;
@@ -54,6 +59,12 @@ int main(int argc, char **argv)
             break;
         case 'o':
             solution_path = optarg;
+            break;
+        case 'r':
+            REDUCE = 0;
+            break;
+        case 'k':
+            TIME_KERNEL_SECONDS = atoi(optarg);
             break;
         case 't':
             timeout = atof(optarg);
@@ -95,4 +106,5 @@ int main(int argc, char **argv)
         writeSolutionToFile(sol, solution_path);
 
     graph_free(g);
+    return 0;
 }

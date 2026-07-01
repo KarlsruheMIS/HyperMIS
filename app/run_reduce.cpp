@@ -23,6 +23,7 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-k sec \t\tTimout in seconds for reduction preprocessing \t\t\t\t default 3600 seconds\n"
                    "-s \tUser specific seed\n"
                    "-o path \tPath to the solution\n"
+                   "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -37,13 +38,16 @@ int main(int argc, char **argv)
 
     std::string name;
 
-    while ((command = getopt(argc, argv, "hveg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
         case 'h':
             printf("%s\n", help);
             return 0;
+        case 'n':
+            USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
         case 'v':
             VERBOSE = 1;
             break;
@@ -125,13 +129,16 @@ int main(int argc, char **argv)
 
 
         for (int i = 0; i < mis_alg->status.reductions.size(); i++)
-            std::cout << name << "," << seed << "," << mis_alg->n_reduced[i] << "," << mis_alg->m_reduced[i] << "," << mis_alg->t_reduced[i] << "," << mis_alg->status.reductions[i]->get_reduction_name() << std::endl;
-        std::cout << name << "," << seed << "," << mis_alg->n_reduced[REDUCTION_NUM] << "," << mis_alg->m_reduced[REDUCTION_NUM] << "," << mis_alg->t_reduced[REDUCTION_NUM] << "," << "edge_domination" << std::endl;
+        {
+            int j = mis_alg->status.reductions[i]->get_reduction_type();
+            std::cout << name << "\t" << seed << "\t" << mis_alg->n_reduced[j] << "\t" << mis_alg->m_reduced[j] << "\t" << mis_alg->t_reduced[j] << "\t" << mis_alg->status.reductions[i]->get_reduction_name() << std::endl;
+        }
+        std::cout << name << "\t" << seed << "\t" << mis_alg->n_reduced[REDUCTION_NUM] << "\t" << mis_alg->m_reduced[REDUCTION_NUM] << "\t" << mis_alg->t_reduced[REDUCTION_NUM] << "\t" << "edge_domination" << std::endl;
     }
-    else
-    {
+    // else
+    // {
         std::cout << name << ",reduce," << g->n << "," << g->m << "," << original_avg_e_size << "," << rg->n << "," << rg->m << "," << avg_e_size << "," << mis_alg->status.IS_size << "," << time.count() << "," << seed << std::endl;
-    }
+    // }
 
     if (solution_path)
         writeGraphToFile(rg, solution_path);
@@ -140,5 +147,5 @@ int main(int argc, char **argv)
     hypergraph_free(g);
     delete mis_alg;
 
-    return 1;
+    return 0;
 }

@@ -2,10 +2,12 @@ cmake_minimum_required(VERSION 3.13)
 project(MISHYPER)
 set(CMAKE_CXX_STANDARD 17)
 
+# set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-set(GUROBI_HOME $ENV{GUROBI_HOME})
+set(GUROBI_HOME /opt/gurobi1103/linux64)
+set(GRB_LICENSE_FILE /home/ernestine/gurobi.lic)
 include_directories(${GUROBI_HOME}/include)
 link_directories(${GUROBI_HOME}/lib)
 
@@ -33,7 +35,7 @@ add_executable(hypergraph_to_graph app/hypergraph_to_graph.cpp)
 
 target_link_libraries(run_reduce libfiles)
 target_link_libraries(hypergraph_to_graph libfiles)
-target_link_libraries(run_ilp libfiles gurobi_c++ gurobi120)
-target_link_libraries(run_ilp_graph libfiles gurobi_c++ gurobi120)
+target_link_libraries(run_ilp libfiles gurobi_c++ gurobi110)
+target_link_libraries(run_ilp_graph libfiles gurobi_c++ gurobi110)
 
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_HOME}/lib")

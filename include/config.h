@@ -17,6 +17,7 @@ extern size_t EDGE_SIZE;
 extern size_t TWIN_NEIGHBORHOOD;
 extern size_t SUNFLOWER_NEIGHBORHOOD;
 
+extern size_t USE_NEIGHBORHOOD_ARRAY;
 
 
 #endif // CONFIG_H

@@ -24,6 +24,8 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
+                   "-n \t\tDisable precomputed neighborhood array (saves memory, computes neighbors on the fly)\n"
+                   "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -36,13 +38,16 @@ int main(int argc, char **argv)
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hvrg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hnvrg:t:s:k:o:")) != -1)
     {
         switch (command)
         {
         case 'h':
             printf("%s\n", help);
             return 0;
+        case 'n':
+            USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
         case 'v':
             VERBOSE = 1;
             break;
@@ -97,7 +102,6 @@ int main(int argc, char **argv)
     {
         mis_alg->reduce_graph();
         NodeID size = mis_alg->status.IS_size;
-        // std::vector<NodeID> map(g->n,-1);
         std::vector<NodeID> remap;
         if (mis_alg->status.remaining_nodes > 0)
         {
@@ -110,7 +114,7 @@ int main(int argc, char **argv)
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
             size += ILP_solution.first;
             // assert(verifier(rg, red_sol));
-            std::cout << name << ",ILP" << "," << size << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
+            std::cout << name << ",ILP," << size << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
 
             // remap reduced_solution
             for (int i = 0; i < red_sol.size(); ++i)
@@ -126,7 +130,7 @@ int main(int argc, char **argv)
         else
         {
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
-            std::cout << name << ",ILP" << "," << size << "," << time.count() << ",1," << seed << std::endl;
+            std::cout << name << ",ILP," << size << "," << time.count() << ",1," << seed << std::endl;
         }
 
         // add reduced vertices to the solution
@@ -145,4 +149,6 @@ int main(int argc, char **argv)
 
     delete mis_alg;
     hypergraph_free(g);
+    
+    return 0;
 }

@@ -21,7 +21,6 @@ private:
     friend degree_one_reduction;
     friend twin_reduction;
     friend sunflower_reduction;
-    friend clique_reduction;
     friend node_domination_reduction;
 
     struct hgraph_status {
@@ -55,6 +54,9 @@ public:
     fast_set node_set;
     fast_set edge_set;
 
+    NodeID* node_vec;
+    NodeID* node_vec2;
+
     // for reduction effect experiments:
     std::vector<NodeID> n_reduced;
     std::vector<NodeID> m_reduced;
@@ -73,5 +75,4 @@ public:
     void add_next_level_neighborhood(NodeID hn);
     bool remove_dominating_edges();
     hypergraph* build_reduced_hypergraph(hypergraph* g, std::vector<NodeID>& remap,std::vector<bool>& sol);
-    void printIS();
 };

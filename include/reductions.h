@@ -1,4 +1,4 @@
-# pragma once
+#pragma once
 
 // local includes
 #include "definitions.h"
@@ -17,10 +17,9 @@ class MISH_algorithm;
 enum reduction_type
 {
 	degree_one,
-	twin,
 	sunflower,
-	clique,
 	node_domination,
+	twin,
 	unconfined
 };
 constexpr size_t REDUCTION_NUM = 6;
@@ -83,7 +82,7 @@ public:
 
 struct general_reduction
 {
-	general_reduction(size_t n) : marker(n)  {}
+	general_reduction(size_t n) : marker(n) {}
 	virtual ~general_reduction() {}
 	virtual general_reduction *clone() const = 0;
 
@@ -121,12 +120,6 @@ struct sunflower_reduction : public general_reduction
 	virtual reduction_type get_reduction_type() const final { return reduction_type::sunflower; }
 	virtual std::string get_reduction_name() const final { return "sunflower"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
-
-	struct Sunflower
-	{
-		NodeID representative;
-		std::vector<NodeID> core;
-	};
 };
 
 struct node_domination_reduction : public general_reduction
@@ -171,20 +164,6 @@ struct unconfined_reduction : public general_reduction
 
 	virtual reduction_type get_reduction_type() const final { return reduction_type::unconfined; }
 	virtual std::string get_reduction_name() const final { return "unconfined"; }
-	virtual bool reduce(MISH_algorithm *mish_alg) final;
-
-};
-
-struct clique_reduction : public general_reduction
-{
-	clique_reduction(size_t n) : general_reduction(n)
-	{
-	}
-	~clique_reduction() {}
-	virtual clique_reduction *clone() const final { return new clique_reduction(*this); }
-
-	virtual reduction_type get_reduction_type() const final { return reduction_type::clique; }
-	virtual std::string get_reduction_name() const final { return "clique"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
@@ -267,3 +246,9 @@ static inline int set_is_equal(const NodeID *A, NodeID a, const NodeID *B, NodeI
 static inline int set_is_subset(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
 // Test if A is a subset of B, ignoring x from A
 static inline int set_is_subset_except_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x);
+// Test if A is a subset of B, ignoring x and negative numbers from A
+static inline int set_is_subset_except_one_positive(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x);
+// Test if A \ B = \emtpyset (return -1) if A\B = {v} (return v) else return -2
+static inline int set_difference_check(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
+// Test if |A \cap B| == 1
+static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b);

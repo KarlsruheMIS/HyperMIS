@@ -2,7 +2,6 @@
 #include "reductions.h"
 #include "MIS_algorithm.h"
 #include <numeric>
-#include <unordered_set>
 #include <algorithm>
 #include <cassert>
 
@@ -84,6 +83,40 @@ static inline int set_is_subset_except_one(const NodeID *A, NodeID a, const Node
   return i == a;
 }
 
+// Test if A is a subset of B, ignoring x and negative numbers from A
+static inline int set_is_subset_except_one_positive(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x)
+{
+  if (b < a - 1)
+    return 0;
+
+  NodeID i = 0, j = 0;
+  while (i < a && j < b)
+  {
+    if (A[i] == B[j])
+    {
+      i++;
+      j++;
+    }
+    else if (A[i] > B[j])
+    {
+      j++;
+    }
+    else if (A[i] == x || A[i] < 0)
+    {
+      i++;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  if (i < a && A[i] == x)
+    i++;
+
+  return i == a;
+}
+
 // Test if A \ B = \emtpyset (return -1) if A\B = {v} (return v) else return -2
 static inline int set_difference_check(const NodeID *A, NodeID a, const NodeID *B, NodeID b)
 {
@@ -127,7 +160,7 @@ static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const No
 {
   int intersection = 0;
   NodeID i = 0, j = 0;
-  while(intersection < 2 && i < a && j < b)
+  while (intersection < 2 && i < a && j < b)
   {
     if (A[i] == B[j])
     {
@@ -138,7 +171,7 @@ static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const No
     else if (A[i] > B[j])
       j++;
     else
-     i++;
+      i++;
   }
 
   if (intersection == 1)
@@ -150,6 +183,9 @@ static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const No
 bool degree_one_reduction::reduce(MISH_algorithm *mish_alg)
 {
   auto &status = mish_alg->status;
+  auto &neighbors = mish_alg->node_vec;
+  auto &nodes = mish_alg->node_set;
+  auto &g = mish_alg->status.hgraph;
   NodeID old_n = status.remaining_nodes;
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
@@ -157,8 +193,23 @@ bool degree_one_reduction::reduce(MISH_algorithm *mish_alg)
     NodeID v = marker.current_element(v_idx);
 
     if (status.node_status[v] == IS_status::not_set)
-      if (status.hgraph->Vd[v] < 2 || status.hgraph->Nd[v] < 2)
+    {
+      if (status.hgraph->Vd[v] < 2)
+      {
         mish_alg->set(v, IS_status::included);
+      }
+      else if (g->Nd && g->Nd[v] < 2)
+      {
+        mish_alg->set(v, IS_status::included);
+      }
+      else
+      {
+        NodeID Nd;
+        NodeID *n = hypergraph_get_neighborhood(g, v, neighbors, Nd, nodes);
+        if (Nd < 2)
+          mish_alg->set(v, IS_status::included);
+      }
+    }
   }
 
   return old_n != status.remaining_nodes;
@@ -170,11 +221,11 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
   NodeID old_n = status.remaining_nodes;
   auto g = status.hgraph;
 
-  std::vector<NodeID> S;
-  std::vector<NodeID> neighborhood_S;
-  neighborhood_S.reserve(status.n);
-  fast_set set_neighborhood_S(status.n);
+  auto &neighbors = mish_alg->node_vec;
+  auto &neighborhood_S = mish_alg->node_vec2;
+  auto &extend_neighborhood_S = mish_alg->node_set;
   int num_iterations = 0;
+  NodeID *S = (NodeID *)malloc(sizeof(NodeID) * CONSTANT_UNCONFINED);
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
@@ -188,51 +239,73 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
     if (num_iterations >= ITERATIONS_UNCONFINED)
       break;
 
-    // if (g->Nd[v] > NEIGHBORS_SIZE)
-    //   continue;
-
     bool v_confined = false;
 
-    S.clear();
-    neighborhood_S.clear();
-    set_neighborhood_S.clear();
+    NodeID S_size = 0;
+    NodeID neighborhood_S_size = 0;
+    extend_neighborhood_S.clear();
 
     NodeID next_node = v;
-    while (!v_confined && S.size() <= CONSTANT_UNCONFINED)
+    while (!v_confined && S_size <= CONSTANT_UNCONFINED)
     {
       auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
       if (elapsed > TIME_KERNEL_SECONDS)
         break;
 
-      S.push_back(next_node);
-      assert(!set_neighborhood_S.get(next_node));
-      set_neighborhood_S.add(next_node);
-      neighborhood_S.push_back(next_node);
+      S[S_size++] = next_node;
+      extend_neighborhood_S.add(next_node);
+      neighborhood_S[neighborhood_S_size++] = next_node;
 
-      for (NodeID i = 0; i < g->Nd[next_node]; i++)
+      if (g->Nd)
       {
-        NodeID neighbor = g->N[next_node][i];
-        if (set_neighborhood_S.add(neighbor))
-          neighborhood_S.push_back(neighbor);
+        for (NodeID i = 0; i < g->Nd[next_node]; i++)
+        {
+          NodeID neighbor = g->N[next_node][i];
+          if (extend_neighborhood_S.add(neighbor))
+            neighborhood_S[neighborhood_S_size++] = neighbor;
+        }
       }
-      std::sort(neighborhood_S.begin(), neighborhood_S.end());
-      std::sort(S.begin(), S.end());
+      else
+      {
+        for (NodeID i = 0; i < g->Vd[next_node]; i++)
+        {
+          NodeID e = g->V[next_node][i];
+          for (NodeID j = 0; j < g->Ed[e]; j++)
+          {
+            NodeID neighbor = g->E[e][j];
+            if (g->Vd[neighbor] > NEIGHBORS_SIZE)
+              continue;
+
+            if (extend_neighborhood_S.add(neighbor))
+              neighborhood_S[neighborhood_S_size++] = neighbor;
+          }
+        }
+      }
+
+      std::sort(neighborhood_S, neighborhood_S + neighborhood_S_size);
+      std::sort(S, S + S_size);
 
       bool v_unconfined = false;
       bool u_is_child_of_S = false;
-      NodeID u;
 
-      for (NodeID i = 0; i < neighborhood_S.size() && !u_is_child_of_S; i++)
+      NodeID u;
+      NodeID Nd;
+      NodeID *n;
+      for (NodeID i = 0; i < neighborhood_S_size && !u_is_child_of_S; i++)
       {
         u = neighborhood_S[i];
-        u_is_child_of_S = set_intersection_equal_one(status.hgraph->N[u], status.hgraph->Nd[u], S.data(), S.size());
+        n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set);
+        u_is_child_of_S = set_intersection_equal_one(n, Nd, S, S_size);
       }
 
       if (!u_is_child_of_S)
+      {
         v_confined = true;
+      }
       else
       {
-        int unconfined_condition_check = set_difference_check(status.hgraph->N[u], status.hgraph->Nd[u], neighborhood_S.data(), neighborhood_S.size());
+        int unconfined_condition_check = set_difference_check(n, Nd, neighborhood_S, neighborhood_S_size);
+
         if (unconfined_condition_check == -1)
           v_unconfined = true;
         else if (unconfined_condition_check < -1)
@@ -240,12 +313,12 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
         else
           next_node = unconfined_condition_check;
       }
-
       if (v_unconfined)
       {
         mish_alg->set(v, IS_status::excluded);
         break;
       }
+
     }
     num_iterations++;
   }
@@ -261,27 +334,36 @@ bool sunflower_reduction::reduce(MISH_algorithm *mish_alg)
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
+    NodeID v = marker.current_element(v_idx);
+
+    if (status.node_status[v] != IS_status::not_set)
+      continue;
+
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
     if (elapsed > TIME_KERNEL_SECONDS)
       break;
 
-    NodeID v = marker.current_element(v_idx);
-    if (status.node_status[v] != IS_status::not_set)
+    if (g->Vd[v] > NEIGHBORS_SIZE || g->Vd[v] == 0)
       continue;
-    bool is_sunflower = false;
 
-    for (NodeID i = 0; i < g->Nd[v]; i++)
+    NodeID e_min = g->V[v][0];
+    for (NodeID i = 1; i < g->Vd[v]; i++)
     {
-      NodeID u = g->N[v][i];
-      if (status.node_status[u] != IS_status::not_set || g->Vd[v] != g->Vd[u])
-        continue;
-      is_sunflower = set_is_equal(g->V[v], g->Vd[v], g->V[u], g->Vd[u]);
+      NodeID e = g->V[v][i];
+      if (g->Ed[e_min] > g->Ed[e])
+        e_min = e;
+    }
 
-      if (is_sunflower)
-      {
-        mish_alg->set(v, IS_status::excluded);
-        break;
-      }
+    for (NodeID i = 0; i < g->Ed[e_min]; i++)
+    {
+      NodeID u = g->E[e_min][i];
+      if (status.node_status[u] != IS_status::not_set || u == v || g->Vd[v] > g->Vd[u])
+        continue;
+
+      bool is_dominating = set_is_subset(g->V[v], g->Vd[v], g->V[u], g->Vd[u]);
+
+      if (is_dominating)
+        mish_alg->set(u, IS_status::excluded);
     }
   }
 
@@ -291,6 +373,9 @@ bool sunflower_reduction::reduce(MISH_algorithm *mish_alg)
 bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
 {
   auto &status = mish_alg->status;
+  auto &neighbors = mish_alg->node_vec;
+  auto &node_set = mish_alg->node_set;
+  auto &neighbors_u = mish_alg->node_vec2;
   NodeID old_n = status.remaining_nodes;
   hypergraph *g = status.hgraph;
 
@@ -304,21 +389,38 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
       if (elapsed > TIME_KERNEL_SECONDS)
         break;
 
-      if (g->Nd[v] > NEIGHBORS_SIZE || g->Nd[v] == 0)
+      NodeID dominated = 0;
+      NodeID deg_v;
+      NodeID *n = hypergraph_get_neighborhood(g, v, neighbors, deg_v, mish_alg->node_set);
+      if (deg_v > NEIGHBORS_SIZE || deg_v == 0)
         continue;
 
-      for (NodeID i = 0; i < g->Nd[v]; i++)
+      for (NodeID i = 0; i < deg_v; i++)
       {
-        NodeID u = g->N[v][i];
+        NodeID u = n[i];
         if (g->Vd[u] == 0)
           continue;
 
-        bool is_dominating = set_is_subset_except_one(g->N[v], g->Nd[v], g->N[u], g->Nd[u], u);
+        NodeID deg_u;
+        NodeID *nu = hypergraph_get_neighborhood(g, u, neighbors_u, deg_u, node_set);
+        if (deg_u < deg_v - dominated)
+          continue;
+
+        bool is_dominating = set_is_subset_except_one_positive(n, deg_v, nu, deg_u, u);
 
         if (is_dominating)
         {
           mish_alg->set(u, IS_status::excluded);
-          break;
+          if (USE_NEIGHBORHOOD_ARRAY)
+          {
+            i--;
+            deg_v--;
+          }
+          else
+          {
+            n[i] = -1;
+            dominated++;
+          }
         }
       }
     }
@@ -329,15 +431,23 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
 bool twin_reduction::reduce(MISH_algorithm *mish_alg)
 {
   auto &status = mish_alg->status;
+  auto &neighbors = mish_alg->node_vec;
+  auto &ntwin = mish_alg->node_vec2;
+  auto &node_set = mish_alg->node_set;
   NodeID old_n = status.remaining_nodes;
   hypergraph *g = status.hgraph;
   std::vector<NodeID> twins;
+  NodeID *t_cand = (NodeID *)malloc(sizeof(NodeID) * status.hgraph->n);
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
     NodeID v = marker.current_element(v_idx);
 
-    if (status.node_status[v] != IS_status::not_set || g->Nd[v] > 50)
+    if (status.node_status[v] != IS_status::not_set)
+      continue;
+
+    NodeID deg_v = g->Vd[v];
+    if (deg_v > 50 || deg_v == 0)
       continue;
 
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
@@ -346,30 +456,51 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
 
     twins.clear();
     twins.push_back(v);
-    NodeID minD_neighbor = g->N[v][0];
-    for (NodeID i = 1; i < g->Nd[v]; i++)
+
+    NodeID Nd;
+    NodeID *n = hypergraph_get_neighborhood(g, v, neighbors, Nd, node_set);
+    if (Nd == 0)
     {
-      NodeID u = g->N[v][i];
+      mish_alg->set(v, IS_status::included);
+      continue;
+    }
+
+    NodeID minD_neighbor = n[0];
+    for (size_t i = 1; i < Nd; i++)
+    {
+      NodeID u = n[i];
       assert(status.node_status[u] == IS_status::not_set);
       if (g->Vd[minD_neighbor] > g->Vd[u])
         minD_neighbor = u;
     }
 
-    for (NodeID i = 0; i < g->Nd[minD_neighbor]; i++)
+    NodeID NminD;
+    NodeID *minDn = hypergraph_get_neighborhood(g, minD_neighbor, t_cand, NminD, node_set);
+    for (NodeID i = 0; i < NminD; i++)
     {
-      NodeID t1 = g->N[minD_neighbor][i];
-
-      if (g->Nd[t1] != g->Nd[v] || t1 == v || status.node_status[t1] != IS_status::not_set)
+      NodeID t = minDn[i];
+      NodeID NtD;
+      NodeID *nt = hypergraph_get_neighborhood(g, t, ntwin, NtD, node_set);
+      if (NtD != Nd || t == v || status.node_status[t] != IS_status::not_set)
         continue;
 
-      if (hypergraph_is_neighbor(g, t1, v))
+      bool adjacent = false;
+      for (NodeID j = 0; j < NtD; j++)
+      {
+        if (nt[j] == v)
+        {
+          adjacent = true;
+          break;
+        }
+      }
+      if (adjacent)
         continue;
 
-      bool is_twin = set_is_equal(g->N[v], g->Nd[v], g->N[t1], g->Nd[t1]);
+      bool is_twin = set_is_equal(n, Nd, nt, NtD);
 
       if (is_twin)
       {
-        twins.push_back(t1);
+        twins.push_back(t);
       }
     }
 
@@ -384,40 +515,6 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
         mish_alg->set(twin, IS_status::included);
   }
 
-  return old_n != status.remaining_nodes;
-}
-
-bool clique_reduction::reduce(MISH_algorithm *mish_alg)
-{
-  auto &status = mish_alg->status;
-  hypergraph *g = status.hgraph;
-  NodeID old_n = status.remaining_nodes;
-
-  for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
-  {
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
-    if (elapsed > TIME_KERNEL_SECONDS)
-      break;
-
-    NodeID v = marker.current_element(v_idx);
-    if (status.node_status[v] != IS_status::not_set || g->Vd[v] != 2 || g->Nd[v] > NEIGHBORS_SIZE || g->Nd[v] < 2)
-      continue;
-
-    bool simplicial = true;
-    for (NodeID i = 0; i < g->Nd[v]; i++)
-    {
-      NodeID u = g->N[v][i];
-      simplicial = set_is_subset_except_one(g->N[v], g->Nd[v], g->N[u], g->Nd[u], u);
-      if (!simplicial)
-        break;
-    }
-
-    if (simplicial)
-    {
-      mish_alg->set(v, IS_status::included);
-      break;
-    }
-  }
   return old_n != status.remaining_nodes;
 }
 

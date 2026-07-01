@@ -16,41 +16,45 @@ const char *help = "Generate clique expansion graph from given hypergraph.\n"
                    "\n-h \t\tDisplay this help message\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tSpecify path and name for the output graph in METIS format\n"
+                   "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "\n* Mandatory input";
 
 void clique_expansion_to_file(hypergraph *g, std::string filename)
 {
+    NodeID *neighbors = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    fast_set n_set(g->n);
     NodeID n = g->n;
     NodeID m = g->m;
 
+    std::ostringstream buffer;
     std::ofstream outFile(filename);
     if (!outFile.is_open())
     {
         std::cerr << "Error: Could not open file " << filename << " for writing.\n";
         return;
     }
+
     // compute number of edges after clique expansion
     NodeID m_graph = 0;
-    for (NodeID v = 0; v < n; v++)
-    {
-        m_graph += g->Nd[v];
-    }
-
-    outFile << n << " " << m_graph / 2;
 
     for (NodeID v = 0; v < n; v++)
     {
-        outFile << "\n"; 
-        //outFile << "1 "; // for adding weights 1
-        for (NodeID i = 0; i < g->Nd[v]; i++)
+        NodeID deg;
+        NodeID *n = hypergraph_get_neighborhood(g, v, neighbors, deg, n_set);
+        m_graph += deg;
+
+        buffer << "\n 1 "; // for adding weights 1
+        for (NodeID i = 0; i < deg; i++)
         {
-            NodeID u = g->N[v][i];
-            if (u >= n)
-                std::cout << "error!" << std::endl;
-            outFile  << u + 1<< " ";
+            buffer << n[i] + 1 << " ";
         }
     }
+
+    outFile << n << " " << m_graph / 2 << " 10";
+    outFile << buffer.str();
     outFile.close();
+
+    free(neighbors);
 }
 
 int main(int argc, char **argv)
@@ -64,13 +68,16 @@ int main(int argc, char **argv)
     std::string graph_name;
     bool graph_name_specified = false;
 
-    while ((command = getopt(argc, argv, "hg:o:")) != -1)
+    while ((command = getopt(argc, argv, "hng:o:")) != -1)
     {
         switch (command)
         {
         case 'h':
             printf("%s\n", help);
             return 0;
+        case 'n':
+            USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
         case 'g':
             hypergraph_path = optarg;
             name = std::filesystem::path(hypergraph_path).filename().string();

@@ -3,7 +3,7 @@
 MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), edge_marker(status.m), node_set(hgr->n), edge_set(hgr->m)
 {
     start_time = std::chrono::high_resolution_clock::now();
-    status.reductions = make_reduction_vector<degree_one_reduction, twin_reduction, sunflower_reduction, clique_reduction, node_domination_reduction, unconfined_reduction>(status.n);
+    status.reductions = make_reduction_vector<degree_one_reduction, sunflower_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n);
 
     reduction_map.resize(REDUCTION_NUM);
 
@@ -24,10 +24,15 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), ed
     }
     if (hgr->m < hgr->n)
         edge_set = fast_set(hgr->n);
+
+    node_vec = (NodeID *)malloc(sizeof(NodeID) * hgr->n);
+    node_vec2 = (NodeID *)malloc(sizeof(NodeID) * hgr->n);
 }
 MISH_algorithm::~MISH_algorithm()
 {
     clear_reduction_vector(status.reductions);
+    free(node_vec);
+    free(node_vec2);
 }
 
 void MISH_algorithm::set(NodeID u, IS_status is_status)
@@ -39,41 +44,52 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
     if (is_status == IS_status::included)
     {
         status.IS_size++;
-        for (NodeID i = 0; i < g->Nd[u]; i++)
+        if (USE_NEIGHBORHOOD_ARRAY)
         {
-            NodeID v = g->N[u][i];
-            if (status.node_status[v] == IS_status::not_set)
+            for (NodeID i = 0; i < g->Nd[u]; i++)
             {
-                set(v, IS_status::excluded);
-                i--;
+                NodeID v = g->N[u][i];
+                if (status.node_status[v] == IS_status::not_set)
+                {
+                    status.remaining_nodes--;
+                    status.node_status[v] = IS_status::excluded;
+                    add_next_level_neighborhood(v);
+                }
+            }
+        }
+        else
+        {
+            for (NodeID i = 0; i < g->Vd[u]; i++)
+            {
+                NodeID e = g->V[u][i];
+                for (NodeID j = 0; j < g->Ed[e]; j++)
+                {
+                    NodeID v = g->E[e][j];
+                    if (status.node_status[v] == IS_status::not_set)
+                    {
+                        status.remaining_nodes--;
+                        status.node_status[v] = IS_status::excluded;
+                        add_next_level_neighborhood(v);
+                    }
+                }
             }
         }
 
         for (NodeID e = 0; e < g->Vd[u]; e++)
         {
             NodeID edge = g->V[u][e];
-            hypergraph_remove_edge(g, edge, &node_set, true);
             status.remaining_edges--;
             status.edge_status[edge] = false;
         }
+
+        hypergraph_remove_neighborhood(status.hgraph, u, &node_set, &edge_set);
     }
     else
     {
         add_next_level_neighborhood(u);
-        for (NodeID e = 0; e < g->Vd[u]; e++)
-        {
-            NodeID edge = g->V[u][e];
-            if (g->Ed[edge] <= 2)
-            {
-                hypergraph_remove_edge(g, edge, &node_set, true);
-                status.remaining_edges--;
-                status.edge_status[edge] = false;
-            }
-        }
+        hypergraph_remove_vertex(g, u);
     }
-
-    hypergraph_remove_vertex(status.hgraph, u);
-    return;
+    // assert(hypergraph_validate(status.hgraph));
 }
 
 void MISH_algorithm::init_reduction_step()
@@ -98,6 +114,17 @@ void MISH_algorithm::reduce_graph()
     if (EXPERIMENT)
         std::cout << "graph";
 
+    // initially remove all edges of size one:
+    for (NodeID e = 0; e < status.hgraph->m; e++)
+    {
+        if (status.hgraph->Ed[e] == 1)
+        {
+            hypergraph_remove_size_one_edge(status.hgraph, e);
+            status.remaining_edges--;
+        }
+    }
+    assert(hypergraph_validate(status.hgraph));
+
     do
     {
         progress = false;
@@ -105,20 +132,23 @@ void MISH_algorithm::reduce_graph()
         NodeID prev_m = status.remaining_edges;
         std::chrono::high_resolution_clock::time_point prev_time = std::chrono::high_resolution_clock::now();
 
-        for (auto &reduction : status.reductions)
+        for (int reduction_index = 0; reduction_index < status.reductions.size(); reduction_index++)
         {
-
+            auto& reduction = status.reductions[reduction_index];
             double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
             if (elapsed > TIME_KERNEL_SECONDS * 1000)
                 break;
 
             active_reduction_index = reduction_map[reduction->get_reduction_type()];
-            if (!status.reductions[active_reduction_index]->has_run && EXPERIMENT)
-                std::cout << "\t" << status.remaining_nodes << " \t" << status.remaining_edges << "\n"
-                          << reduction->get_reduction_name();
+            assert(active_reduction_index == reduction_index);
+            if (!status.reductions[reduction_index]->has_run && EXPERIMENT)
+                std::cout << "\t" << status.remaining_nodes << " \t" << status.remaining_edges << std::endl;
 
             init_reduction_step();
             progress = reduction->reduce(this);
+
+            if (progress)
+                reduction_index = -1;
 
             if (EXPERIMENT)
             {
@@ -138,7 +168,7 @@ void MISH_algorithm::reduce_graph()
                 }
             }
 
-            active_reduction_index++;
+            // assert(hypergraph_validate(status.hgraph));
         }
 
         if (!progress)
@@ -185,6 +215,7 @@ void MISH_algorithm::reduce_graph()
 
 hypergraph *MISH_algorithm::build_reduced_hypergraph(hypergraph *g, std::vector<NodeID> &remap, std::vector<bool> &sol)
 {
+    // TODO use node_vecs
     std::vector<NodeID> map(g->n, -1);
     std::vector<int> reduced(status.n, 1);
     for (NodeID v = 0; v < g->n; v++)
@@ -250,6 +281,7 @@ bool MISH_algorithm::remove_dominating_edges()
 
         if (g->Ed[e] <= 1)
         {
+            add_next_level_nodes_of_edge(e);
             dominated_edges.push_back(e);
             status.remaining_edges--;
             status.edge_status[e] = false;
@@ -314,7 +346,7 @@ bool MISH_algorithm::remove_dominating_edges()
     }
 
     if (dominated_edges.size() > 0)
-        hypergraph_remove_edges(g, dominated_edges.data(), dominated_edges.size(), &edge_set, true);
+        hypergraph_remove_edges(g, dominated_edges.data(), dominated_edges.size(), &edge_set, &node_set);
 
     return old_e != status.remaining_edges;
 }
