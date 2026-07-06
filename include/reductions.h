@@ -100,7 +100,7 @@ struct general_reduction
 
 struct edge_degree_one_reduction : public general_reduction
 {
-	edge_degree_one_reduction(size_t n, size_t m) : general_reduction(n)
+	edge_degree_one_reduction(size_t n, size_t m) : general_reduction(m)
 	{
 		vertex_rule = false;
 	}

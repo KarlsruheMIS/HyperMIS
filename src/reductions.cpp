@@ -470,7 +470,6 @@ bool edge_domination_reduction::reduce(MISH_algorithm *mish_alg)
       dominated_edges[de_size++] = e;
       continue;
     }
-    assert(!(g->Ed[e] == 0 && status.edge_status[e]));
 
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
     if (elapsed > TIME_KERNEL_SECONDS)
@@ -493,30 +492,11 @@ bool edge_domination_reduction::reduce(MISH_algorithm *mish_alg)
     for (NodeID j = 0; j < g->Vd[minPin]; j++)
     {
       NodeID net2 = g->V[minPin][j];
-      if (net2 == net1 || g->Ed[net2] < g->Ed[net1] || !status.edge_status[net2])
+      if (net2 == net1 || !status.edge_status[net2])
         continue;
-      // check if all hypernodes of net1 are contained in net2
-      is_dominated = true;
-      NodeID *p_net1 = g->E[net1];
-      NodeID *p_net2 = g->E[net2];
 
-      while (p_net1 != g->E[net1] + g->Ed[net1])
-      {
-        while (*p_net1 != *p_net2)
-        {
-          p_net2++;
-          // if p-net2 reaches the end of the pins -> no domination
-          if (p_net2 == g->E[net2] + g->Ed[net2])
-          {
-            is_dominated = false;
-            break;
-          }
-        }
-        if (!is_dominated)
-          break;
-        else
-          p_net1++;
-      }
+      bool is_dominated = set_is_subset(g->E[net1], g->Ed[net1], g->E[net2], g->Ed[net2]);
+
       if (is_dominated)
       {
         dominated_edges[de_size++] = net1;

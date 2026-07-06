@@ -27,25 +27,25 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         status.reductions = make_reduction_vector<edge_degree_one_reduction,unconfined_reduction>(status.n, status.m);
         break;                                    
     case 7:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;                                    
     case 8: // no degree_one                      
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,sunflower_reduction, node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;                                    
     case 9: // no sunflower                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;                                    
-    case 10: // no node_domination                
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 11: // no edge_domination                
+    case 10: // no edge_domination                
         status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;                                    
+    case 11: // no node_domination                
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, edge_domination_reduction, sunflower_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;                                    
     case 12: // no twin                           
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, node_domination_reduction, edge_domination_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
         break;                                    
     case 13: // no unconfined                     
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, node_domination_reduction, edge_domination_reduction, twin_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
         break;
     default:
         break;
@@ -140,14 +140,6 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
         hypergraph_remove_vertex(g, u);
     }
 
-
-    NodeID edge_count = 0;
-    for (NodeID i = 0; i < status.hgraph->m; i++)
-    {
-        if (status.edge_status[i])
-            edge_count++;
-    }
-    assert(edge_count == status.remaining_edges);
     // assert(hypergraph_validate(status.hgraph));
 }
 

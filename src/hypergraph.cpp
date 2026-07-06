@@ -161,9 +161,9 @@ hypergraph *hypergraph_parse(FILE *f)
     return g;
 }
 
-NodeID *hypergraph_get_neighborhood(const hypergraph *g, NodeID u, NodeID *neighborhood, NodeID &deg, fast_set &node_set)
+NodeID *hypergraph_get_neighborhood(hypergraph *g, NodeID u, NodeID *neighborhood, NodeID &deg, fast_set &node_set)
 {
-    if (g->N && g->Nd)
+    if (USE_NEIGHBORHOOD_ARRAY)
     {
         deg = g->Nd[u];
         return g->N[u];
@@ -256,7 +256,35 @@ void hypergraph_sort(hypergraph *g)
         g->Ed[i] = d;
     }
 }
-
+ 
+// type=0 g->V  type=1 g->E  type=2 g->N
+void hypergraph_reset(hypergraph *g, NodeID element, int type)
+{
+    switch (type)
+    {
+    case 0:
+        g->Vd[element] = 0;
+        if (g->Va[element] == MIN_ALLOC)
+            break;
+        g->Va[element] = MIN_ALLOC;
+        g->V[element] = (NodeID *)realloc(g->V[element], sizeof(NodeID) * g->Va[element]);
+        break;
+    case 1:
+        g->Ed[element] = 0;
+        if (g->Ea[element] == MIN_ALLOC)
+            break;
+        g->Ea[element] = MIN_ALLOC;
+        g->E[element] = (NodeID *)realloc(g->E[element], sizeof(NodeID) * g->Ea[element]);
+        break;
+    case 2:
+        g->Nd[element] = 0;
+        if (g->Na[element] == MIN_ALLOC)
+            break;
+        g->Na[element] = MIN_ALLOC;
+        g->N[element] = (NodeID *)realloc(g->N[element], sizeof(NodeID) * g->Na[element]);
+        break;
+    }
+}
 
 void hypergraph_remove_element(NodeID *vec, NodeID &size, NodeID element)
 {
@@ -289,9 +317,7 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u)
             hypergraph_remove_size_one_edge(g, e);
     }
 
-    g->Vd[u] = 0;
-    g->Va[u] = MIN_ALLOC;
-    g->V[u] = (NodeID *)realloc(g->V[u], sizeof(NodeID) * g->Va[u]);
+    hypergraph_reset(g, u, 0);
 
     if (g->Nd)
     {
@@ -301,9 +327,7 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u)
             assert(v != u);
             hypergraph_remove_element(g->N[v], g->Nd[v], u);
         }
-        g->Nd[u] = 0;
-        g->Na[u] = MIN_ALLOC;
-        g->N[u] = (NodeID *)realloc(g->N[u], sizeof(NodeID) * g->Na[u]);
+        hypergraph_reset(g, u, 2);
     }
 }
 
@@ -315,9 +339,7 @@ void hypergraph_remove_size_one_edge(hypergraph *g, NodeID e)
         hypergraph_remove_element(g->V[v], g->Vd[v], e);
     }
 
-    g->Ed[e] = 0;
-    g->Ea[e] = MIN_ALLOC;
-    g->E[e] = (NodeID *)realloc(g->E[e], sizeof(NodeID) * g->Ea[e]);
+    hypergraph_reset(g, e, 1);
 }
 
 void hypergraph_remove_edge(hypergraph *g, NodeID e)
@@ -328,9 +350,7 @@ void hypergraph_remove_edge(hypergraph *g, NodeID e)
         hypergraph_remove_element(g->V[v], g->Vd[v], e);
     }
 
-    g->Ed[e] = 0;
-    g->Ea[e] = MIN_ALLOC;
-    g->E[e] = (NodeID *)realloc(g->E[e], sizeof(NodeID) * g->Ea[e]);
+    hypergraph_reset(g, e, 1);
 }
 
 void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *edges, fast_set *nodes)
@@ -351,9 +371,7 @@ void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *
                 hypergraph_remove_set(g->V[v], g->Vd[v], edges);
         }
 
-        g->Ed[e] = 0;
-        g->Ea[e] = MIN_ALLOC;
-        g->E[e] = (NodeID *)realloc(g->E[e], sizeof(NodeID) * g->Ea[e]);
+        hypergraph_reset(g, e, 1);
     }
 }
 
@@ -382,7 +400,7 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
             for (NodeID j = 0; j < g->Nd[v]; j++)
             {
                 NodeID w = g->N[v][j];
-                if (!nodes->get(w)) 
+                if (!nodes->get(w))
                     hypergraph_remove_set(g->N[w], g->Nd[w], nodes);
             }
         }
@@ -406,7 +424,7 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
                 for (NodeID k = 0; k < g->Ed[e]; k++)
                 {
                     NodeID v = g->E[e][k];
-                    if (!nodes->get(v)) 
+                    if (!nodes->get(v))
                         hypergraph_remove_set(g->V[v], g->Vd[v], edges);
                 }
 
@@ -415,17 +433,11 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
                     hypergraph_remove_size_one_edge(g, e);
             }
 
-            g->Vd[w] = 0;
-            g->Va[w] = MIN_ALLOC;
-            g->V[w] = (NodeID *)realloc(g->V[w], sizeof(NodeID) * g->Va[w]);
+            hypergraph_reset(g, w, 0);
         }
-        g->Ed[f] = 0;
-        g->Ea[f] = MIN_ALLOC;
-        g->E[f] = (NodeID *)realloc(g->E[f], sizeof(NodeID) * g->Ea[f]);
+        hypergraph_reset(g, f, 1);
     }
-    g->Vd[u] = 0;
-    g->Va[u] = MIN_ALLOC;
-    g->V[u] = (NodeID *)realloc(g->V[u], sizeof(NodeID) * g->Va[u]);
+    hypergraph_reset(g, u, 0);
 }
 
 bool hypergraph_is_neighbor(hypergraph *g, NodeID u, NodeID neighbor)
@@ -507,7 +519,6 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     }
     return rg;
 }
-
 
 graph *hypergraph_clique_expansion(hypergraph *hg)
 {
@@ -604,7 +615,6 @@ hypergraph *hypergraph_copy(hypergraph *g)
 
     return c;
 }
-
 
 bool hypergraph_validate_edge(hypergraph *g, NodeID e)
 {

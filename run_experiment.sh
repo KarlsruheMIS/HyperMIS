@@ -3,17 +3,17 @@
 res=results
 hypergraphs=./hypergraphs
 
-ilp_file=$res/ILP/ilp.csv
-rilp_file=$res/ILP/rilp.csv
-nilp_file=$res/ILP/nilp.csv
-nrilp_file=$res/ILP/nrilp.csv
+ilp_file=$res/ILP/ilp.tsv
+rilp_file=$res/ILP/rilp.tsv
+nilp_file=$res/ILP/nilp.tsv
+nrilp_file=$res/ILP/nrilp.tsv
 
-red_file=$res/RED/red.csv
-nred_file=$res/RED/nred.csv
+red_file=$res/RED/red.tsv
+nred_file=$res/RED/nred.tsv
 
-n=4
-# SEEDS=(1 21 203 1002)
-SEEDS=(0)
+n=8
+t=3600
+SEEDS=(1 21 203 1002)
 
 append_mem() {
   local id="$1"
@@ -22,7 +22,7 @@ append_mem() {
   local mem
   mem=$(cat /tmp/mem."$id")
   rm -f /tmp/mem."$id"
-  echo -e $2\t$mem
+  echo -e "$2\t$mem"
 }
 
 run_reduce() {
@@ -35,7 +35,7 @@ run_reduce() {
   # run program while capturing memory via /usr/bin/time
   out=$(
     /usr/bin/time -f "%M" \
-      ./build/run_reduce "$@" -g "$graph" -t 3600 -s "$seed" \
+      ./build/run_reduce "$@" -g "$graph" -t "$t" -s "$seed" \
       2> /tmp/mem.$$
   )
 
@@ -52,7 +52,7 @@ run_ilp() {
   # run program while capturing memory via /usr/bin/time
   out=$(
     /usr/bin/time -f "%M" \
-      ./build/run_ilp "$@" -g "$graph" -t 3600 -s "$seed" \
+      ./build/run_ilp "$@" -g "$graph" -t "$t" -s "$seed" \
       2> /tmp/mem.$$
   )
 
@@ -62,6 +62,7 @@ run_ilp() {
 export -f run_reduce
 export -f run_ilp
 export -f append_mem
+export t
 
 ##### REDUCTIONS
 echo -e "graph\talgo\tn\tm\te\trn\trm\tre\toffset\ttime\tseed\tmem" > "${nred_file}"
