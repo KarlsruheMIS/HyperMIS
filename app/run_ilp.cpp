@@ -20,11 +20,11 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tPath to store the best solution found \t\t default not stored\n"
-                   "-r \t\tNo reduction preprocessing\n"
+                   "-r \t\tReduction Config: [0: disable all | 1,...,6 (only degree_one,sunflower, node_domination, edge_domination , twin, unconfinedresp.)| 8,...,13 (disable respective reduction) \t\t\t default all reductions enabled (7)\n"
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
-                   "-n \t\tDisable precomputed neighborhood array (saves memory, computes neighbors on the fly)\n"
+                   "-e \t\tClique expand hypergraph to graph before ILP run.\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "\n* Mandatory input";
 
@@ -35,10 +35,11 @@ int main(int argc, char **argv)
     double timeout = 3600;
 
     unsigned int seed = time(NULL);
+    bool run_on_graph = false;
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnvrg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:r:")) != -1)
     {
         switch (command)
         {
@@ -68,7 +69,13 @@ int main(int argc, char **argv)
             TIME_KERNEL_SECONDS = atoi(optarg);
             break;
         case 'r':
-            REDUCE = 0;
+            if (optarg)
+                REDUCTION_CONFIG = atoi(optarg);
+            else
+                REDUCTION_CONFIG = 0;
+            break;
+        case 'e':
+            run_on_graph = 1;
             break;
         case '?':
             return 1;
@@ -97,6 +104,7 @@ int main(int argc, char **argv)
     hypergraph_build_neighbors(g, &mis_alg->node_set);
     // assert(hypergraph_validate(g));
     std::vector<bool> sol(g->n, false);
+    std::pair<NodeID, int> ILP_solution;
 
     if (REDUCE)
     {
@@ -106,15 +114,21 @@ int main(int argc, char **argv)
         if (mis_alg->status.remaining_nodes > 0)
         {
             hypergraph *rg = mis_alg->build_reduced_hypergraph(mis_alg->status.hgraph, remap, sol);
-            // assert(hypergraph_validate(rg));
-            // assert(verifier(g, sol));
             std::vector<bool> red_sol(rg->n, false);
 
-            auto ILP_solution = ILP_solver(rg, timeout, mis_alg->start_time, red_sol);
+            if (run_on_graph)
+            {
+                graph *expanded_rg = hypergraph_clique_expansion(rg);
+                ILP_solution = ILP_solver_graphs(expanded_rg, timeout, mis_alg->start_time, red_sol);
+                free(expanded_rg);
+            }
+            else
+            {
+                ILP_solution = ILP_solver(rg, timeout, mis_alg->start_time, red_sol);
+            }
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
             size += ILP_solution.first;
-            // assert(verifier(rg, red_sol));
-            std::cout << name << ",ILP," << size << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
+            std::cout << name << "\tILP\t" << size << "\t" << time.count() << "\t" << (ILP_solution.second == 2) << "\t" << seed << std::endl;
 
             // remap reduced_solution
             for (int i = 0; i < red_sol.size(); ++i)
@@ -130,7 +144,7 @@ int main(int argc, char **argv)
         else
         {
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
-            std::cout << name << ",ILP," << size << "," << time.count() << ",1," << seed << std::endl;
+            std::cout << name << "\tILP\t" << size << "\t" << time.count() << "\t1\t" << seed << std::endl;
         }
 
         // add reduced vertices to the solution
@@ -140,15 +154,24 @@ int main(int argc, char **argv)
     }
     else
     {
-        auto ILP_solution = ILP_solver(g, timeout, mis_alg->start_time, sol);
+        if (run_on_graph)
+        {
+            graph *expanded_g = hypergraph_clique_expansion(g);
+            ILP_solution = ILP_solver_graphs(expanded_g, timeout, mis_alg->start_time, sol);
+            free(expanded_g);
+        }
+        else
+        {
+            ILP_solution = ILP_solver(g, timeout, mis_alg->start_time, sol);
+        }
         std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
-        std::cout << name << ",ILP," << ILP_solution.first << "," << time.count() << "," << (ILP_solution.second == 2) << "," << seed << std::endl;
+        std::cout << name << "\tILP\t" << ILP_solution.first << "\t" << time.count() << "\t" << (ILP_solution.second == 2) << "\t" << seed << std::endl;
     }
     if (solution_path)
         writeSolutionToFile(sol, solution_path);
 
     delete mis_alg;
     hypergraph_free(g);
-    
+
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "config.h"
 #include "definitions.h"
+#include "graph.h"
 #include "fast_set.h"
 
 typedef struct
@@ -38,6 +39,8 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
 // Utility
 
 void hypergraph_sort(hypergraph *g);
+
+graph *hypergraph_clique_expansion(hypergraph *hg);
 
 bool hypergraph_validate(hypergraph *g);
 

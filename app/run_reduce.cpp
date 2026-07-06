@@ -16,6 +16,7 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "\nThe output of the program without -v is a single line on the form:\n"
                    "instance_name,#vertices,#edges,average_edge_size,#reduced_vertices,#reduced_edges,reduced_avg_edge_size,offset,time,seed\n"
                    "\n-h \t\tDisplay this help message\n"
+                   "-r \t\tReduction Config: [0: disable all | 1,...,6 (only degree_one,sunflower, node_domination, edge_domination , twin, unconfinedresp.)| 8,...,13 (disable respective reduction) \t\t\t default all reductions enabled (7)\n"
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-e \t\tExperiment mode, output reduction statistics to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
@@ -38,13 +39,14 @@ int main(int argc, char **argv)
 
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:")) != -1)
+    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:r:")) != -1)
     {
         switch (command)
         {
         case 'h':
             printf("%s\n", help);
             return 0;
+            break;
         case 'n':
             USE_NEIGHBORHOOD_ARRAY = 1;
             break;
@@ -69,6 +71,12 @@ int main(int argc, char **argv)
             break;
         case 'k':
             TIME_KERNEL_SECONDS = atoi(optarg);
+            break;
+        case 'r':
+            if (optarg)
+                REDUCTION_CONFIG = atoi(optarg);
+            else
+                return 0;
             break;
         case '?':
             return 1;
@@ -123,22 +131,21 @@ int main(int argc, char **argv)
         avg_e_size += rg->Ed[e];
     avg_e_size = avg_e_size / (rg->m);
 
+
     if (EXPERIMENT)
     {
-        std::cout <<"\t"<< rg->n << "\t" << rg->m << std::endl;
-
-
         for (int i = 0; i < mis_alg->status.reductions.size(); i++)
         {
             int j = mis_alg->status.reductions[i]->get_reduction_type();
-            std::cout << name << "\t" << seed << "\t" << mis_alg->n_reduced[j] << "\t" << mis_alg->m_reduced[j] << "\t" << mis_alg->t_reduced[j] << "\t" << mis_alg->status.reductions[i]->get_reduction_name() << std::endl;
+            std::printf("%s\t%d\t%d\t%d\t%.5f\t%s\n", name.c_str(), seed, mis_alg->n_reduced[j], mis_alg->m_reduced[j], (double)mis_alg->t_reduced[j], mis_alg->status.reductions[i]->get_reduction_name().c_str());
         }
-        std::cout << name << "\t" << seed << "\t" << mis_alg->n_reduced[REDUCTION_NUM] << "\t" << mis_alg->m_reduced[REDUCTION_NUM] << "\t" << mis_alg->t_reduced[REDUCTION_NUM] << "\t" << "edge_domination" << std::endl;
+
+        // std::printf("%s\t%d\t%d\t%d\t%.5f\t%d\n", name.c_str(), seed, g->n - rg->n, g->m - rg->m, (double)time.count(), REDUCTION_CONFIG);
     }
-    // else
-    // {
-        std::cout << name << ",reduce," << g->n << "," << g->m << "," << original_avg_e_size << "," << rg->n << "," << rg->m << "," << avg_e_size << "," << mis_alg->status.IS_size << "," << time.count() << "," << seed << std::endl;
-    // }
+    else
+    {
+        std::printf("%s\treduce%ld\t%d\t%d\t%.2f\t%d\t%d\t%.2f\t%d\t%.5f\t%d\n", name.c_str(), REDUCTION_CONFIG, g->n, g->m, original_avg_e_size, rg->n, rg->m, avg_e_size, mis_alg->status.IS_size, (double)time.count(), seed);
+    }
 
     if (solution_path)
         writeGraphToFile(rg, solution_path);

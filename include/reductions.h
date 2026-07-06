@@ -16,13 +16,14 @@ class MISH_algorithm;
 
 enum reduction_type
 {
-	degree_one,
+	edge_degree_one,
+	node_degree_one,
 	sunflower,
 	node_domination,
 	twin,
-	unconfined
+	unconfined,
+	edge_domination
 };
-constexpr size_t REDUCTION_NUM = 6;
 
 template <typename NodeID>
 class element_marker
@@ -93,25 +94,40 @@ struct general_reduction
 	virtual void apply(MISH_algorithm *mish_alg) {}
 
 	bool has_run = false;
+	bool vertex_rule = true;
 	element_marker<NodeID> marker;
 };
 
-struct degree_one_reduction : public general_reduction
+struct edge_degree_one_reduction : public general_reduction
 {
-	degree_one_reduction(size_t n) : general_reduction(n)
+	edge_degree_one_reduction(size_t n, size_t m) : general_reduction(n)
+	{
+		vertex_rule = false;
+	}
+	~edge_degree_one_reduction() {}
+	virtual edge_degree_one_reduction *clone() const final { return new edge_degree_one_reduction(*this); }
+
+	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_degree_one; }
+	virtual std::string get_reduction_name() const final { return "edge_degree_one"; }
+	virtual bool reduce(MISH_algorithm *mish_alg) final;
+};
+
+struct node_degree_one_reduction : public general_reduction
+{
+	node_degree_one_reduction(size_t n, size_t m) : general_reduction(n)
 	{
 	}
-	~degree_one_reduction() {}
-	virtual degree_one_reduction *clone() const final { return new degree_one_reduction(*this); }
+	~node_degree_one_reduction() {}
+	virtual node_degree_one_reduction *clone() const final { return new node_degree_one_reduction(*this); }
 
-	virtual reduction_type get_reduction_type() const final { return reduction_type::degree_one; }
-	virtual std::string get_reduction_name() const final { return "degree_one"; }
+	virtual reduction_type get_reduction_type() const final { return reduction_type::node_degree_one; }
+	virtual std::string get_reduction_name() const final { return "node_degree_one"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
 struct sunflower_reduction : public general_reduction
 {
-	sunflower_reduction(size_t n) : general_reduction(n)
+	sunflower_reduction(size_t n,size_t m) : general_reduction(n)
 	{
 	}
 	~sunflower_reduction() {}
@@ -124,7 +140,7 @@ struct sunflower_reduction : public general_reduction
 
 struct node_domination_reduction : public general_reduction
 {
-	node_domination_reduction(size_t n) : general_reduction(n)
+	node_domination_reduction(size_t n, size_t m) : general_reduction(n)
 	{
 	}
 	~node_domination_reduction() {}
@@ -137,7 +153,7 @@ struct node_domination_reduction : public general_reduction
 
 struct twin_reduction : public general_reduction
 {
-	twin_reduction(size_t n) : general_reduction(n)
+	twin_reduction(size_t n, size_t m) : general_reduction(n)
 	{
 	}
 	~twin_reduction() {}
@@ -156,7 +172,7 @@ struct twin_reduction : public general_reduction
 
 struct unconfined_reduction : public general_reduction
 {
-	unconfined_reduction(size_t n) : general_reduction(n)
+	unconfined_reduction(size_t n, size_t m) : general_reduction(n)
 	{
 	}
 	~unconfined_reduction() {}
@@ -164,6 +180,20 @@ struct unconfined_reduction : public general_reduction
 
 	virtual reduction_type get_reduction_type() const final { return reduction_type::unconfined; }
 	virtual std::string get_reduction_name() const final { return "unconfined"; }
+	virtual bool reduce(MISH_algorithm *mish_alg) final;
+};
+
+struct edge_domination_reduction : public general_reduction
+{
+	edge_domination_reduction(size_t n, size_t m) : general_reduction(m)
+	{
+		vertex_rule = false;
+	}
+	~edge_domination_reduction() {}
+	virtual edge_domination_reduction *clone() const final { return new edge_domination_reduction(*this); }
+
+	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_domination; }
+	virtual std::string get_reduction_name() const final { return "edge_domination"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
@@ -217,24 +247,24 @@ struct reduction_ptr
 };
 
 template <class Last>
-void make_reduction_vector_helper(std::vector<reduction_ptr> &vec, size_t n)
+void make_reduction_vector_helper(std::vector<reduction_ptr> &vec, size_t n, size_t m)
 {
-	vec.emplace_back(new Last(n));
+	vec.emplace_back(new Last(n,m));
 };
 
 template <class First, class Second, class... Redus>
-void make_reduction_vector_helper(std::vector<reduction_ptr> &vec, size_t n)
+void make_reduction_vector_helper(std::vector<reduction_ptr> &vec, size_t n, size_t m)
 {
-	vec.emplace_back(new First(n));
-	make_reduction_vector_helper<Second, Redus...>(vec, n);
+	vec.emplace_back(new First(n,m));
+	make_reduction_vector_helper<Second, Redus...>(vec, n, m);
 };
 
 template <class... Redus>
-std::vector<reduction_ptr> make_reduction_vector(size_t n)
+std::vector<reduction_ptr> make_reduction_vector(size_t n, size_t m)
 {
 	std::vector<reduction_ptr> vec;
-	vec.reserve(20);
-	make_reduction_vector_helper<Redus...>(vec, n);
+	vec.reserve(10);
+	make_reduction_vector_helper<Redus...>(vec, n, m);
 	return vec;
 };
 

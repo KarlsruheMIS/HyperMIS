@@ -1,5 +1,4 @@
 #include "hypergraph.h"
-#include "fast_set.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -509,6 +508,43 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     return rg;
 }
 
+
+graph *hypergraph_clique_expansion(hypergraph *hg)
+{
+    NodeID *neighbors = (NodeID *)malloc(sizeof(NodeID) * hg->n);
+    fast_set n_set(hg->n);
+    NodeID m = 0;
+    NodeID n = hg->n;
+
+    for (NodeID v = 0; v < n; v++)
+    {
+        NodeID deg;
+        NodeID *n = hypergraph_get_neighborhood(hg, v, neighbors, deg, n_set);
+        m += deg;
+    }
+
+    long long *V = (long long *)malloc(sizeof(long long) * (n + 1));
+    NodeID *E = (NodeID *)malloc(sizeof(NodeID) * (m));
+
+    NodeID ei = 0;
+
+    for (NodeID v = 0; v < n; v++)
+    {
+        V[v] = ei;
+        NodeID deg;
+        NodeID *n = hypergraph_get_neighborhood(hg, v, neighbors, deg, n_set);
+        for (NodeID i = 0; i < deg; i++)
+            E[ei++] = n[i];
+    }
+    V[n] = ei;
+
+    graph *g = (graph *)malloc(sizeof(graph));
+    *g = (graph){.n = n, .m = m, .V = V, .E = E};
+
+    free(neighbors);
+    return g;
+}
+
 hypergraph *hypergraph_copy(hypergraph *g)
 {
     hypergraph *c = (hypergraph *)malloc(sizeof(hypergraph));
@@ -569,18 +605,6 @@ hypergraph *hypergraph_copy(hypergraph *g)
     return c;
 }
 
-bool hypergraph_validate(hypergraph *g)
-{
-    for (NodeID i = 0; i < g->n; i++)
-        if (!hypergraph_validate_vertex(g, i))
-            return 0;
-
-    for (NodeID i = 0; i < g->m; i++)
-        if (!hypergraph_validate_edge(g, i))
-            return 0;
-
-    return 1;
-}
 
 bool hypergraph_validate_edge(hypergraph *g, NodeID e)
 {
@@ -632,6 +656,19 @@ bool hypergraph_validate_vertex(hypergraph *g, NodeID u)
                 return 0;
         }
     }
+    return 1;
+}
+
+bool hypergraph_validate(hypergraph *g)
+{
+    for (NodeID i = 0; i < g->n; i++)
+        if (!hypergraph_validate_vertex(g, i))
+            return 0;
+
+    for (NodeID i = 0; i < g->m; i++)
+        if (!hypergraph_validate_edge(g, i))
+            return 0;
+
     return 1;
 }
 
