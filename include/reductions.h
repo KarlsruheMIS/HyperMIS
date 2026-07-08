@@ -95,6 +95,7 @@ struct general_reduction
 
 	bool has_run = false;
 	bool vertex_rule = true;
+	bool use_neighbors = false;
 	element_marker<NodeID> marker;
 };
 
@@ -142,6 +143,7 @@ struct node_domination_reduction : public general_reduction
 {
 	node_domination_reduction(size_t n, size_t m) : general_reduction(n)
 	{
+		use_neighbors = true;
 	}
 	~node_domination_reduction() {}
 	virtual node_domination_reduction *clone() const final { return new node_domination_reduction(*this); }
@@ -155,6 +157,7 @@ struct twin_reduction : public general_reduction
 {
 	twin_reduction(size_t n, size_t m) : general_reduction(n)
 	{
+		use_neighbors = true;
 	}
 	~twin_reduction() {}
 	virtual twin_reduction *clone() const final { return new twin_reduction(*this); }
@@ -174,6 +177,7 @@ struct unconfined_reduction : public general_reduction
 {
 	unconfined_reduction(size_t n, size_t m) : general_reduction(n)
 	{
+		use_neighbors = true;
 	}
 	~unconfined_reduction() {}
 	virtual unconfined_reduction *clone() const final { return new unconfined_reduction(*this); }

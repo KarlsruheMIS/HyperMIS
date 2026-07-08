@@ -25,6 +25,7 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-s \tUser specific seed\n"
                    "-o path \tPath to the solution\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
+                   "-f \t\tStore neighborhood array only when needed\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
 
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:r:")) != -1)
+    while ((command = getopt(argc, argv, "hnvefg:t:s:k:o:r:")) != -1)
     {
         switch (command)
         {
@@ -48,7 +49,12 @@ int main(int argc, char **argv)
             return 0;
             break;
         case 'n':
-            USE_NEIGHBORHOOD_ARRAY = 1;
+            if (!BUILD_ON_THE_FLY_NEIGHBORHOOD)
+                USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
+        case 'f':
+            BUILD_ON_THE_FLY_NEIGHBORHOOD = 1;
+            USE_NEIGHBORHOOD_ARRAY = 0;
             break;
         case 'v':
             VERBOSE = 1;
@@ -105,9 +111,10 @@ int main(int argc, char **argv)
         original_avg_e_size += g->Ed[e];
     original_avg_e_size = original_avg_e_size / g->m;
 
-    // assert(hypergraph_validate(g));
+    assert(hypergraph_validate(g));
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
-    hypergraph_build_neighbors(g, &(mis_alg->node_set));
+    if (USE_NEIGHBORHOOD_ARRAY)
+        hypergraph_build_neighbors(g, &(mis_alg->node_set));
 
     mis_alg->reduce_graph();
 
@@ -123,7 +130,7 @@ int main(int argc, char **argv)
     map.reserve(mis_alg->status.n);
 
     hypergraph *rg = hypergraph_build_reduced(g, map.data(), remap.data(), reduced.data());
-    // assert(hypergraph_validate(rg));
+    assert(hypergraph_validate(rg));
     std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
 
     double avg_e_size = 0.0;

@@ -51,6 +51,7 @@ public:
     hgraph_status status;
     std::chrono::high_resolution_clock::time_point start_time;
     fast_set node_set;
+    fast_set node_set2;
     fast_set edge_set;
 
     NodeID* edge_vec;
@@ -72,10 +73,11 @@ public:
     void reduce_graph();
     hypergraph* build_reduced_hypergraph(hypergraph* g, std::vector<NodeID>& remap,std::vector<bool>& sol);
 
-    void remove_edge(NodeID edge);
-    void add_next_level_node(NodeID hn);
+    void remove_edge(NodeID e);
+    void add_next_level_node(NodeID v);
     void add_next_level_edge(NodeID e);
-    void add_next_level_nodes_of_edge(NodeID he);
-    void add_next_level_neighborhood(NodeID hn);
+    void add_next_level_edges_of_node(NodeID v);
+    void add_next_level_nodes_of_edge(NodeID e);
+    void add_next_level_neighborhood(NodeID v);
 };
 

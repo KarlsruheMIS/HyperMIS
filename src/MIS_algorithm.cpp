@@ -1,6 +1,6 @@
 #include "MIS_algorithm.h"
 
-MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), node_set(hgr->n), edge_set(hgr->m)
+MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), node_set(hgr->n), node_set2(hgr->n), edge_set(hgr->m)
 {
     start_time = std::chrono::high_resolution_clock::now();
     switch (REDUCTION_CONFIG)
@@ -9,43 +9,43 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         REDUCE = 0;
         break;
     case 1:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction>(status.n, status.m);
-        break;                                    
-    case 2:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,sunflower_reduction>(status.n, status.m);
-        break;                                    
-    case 3:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_domination_reduction>(status.n, status.m);
-        break;                                    
-    case 4:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,edge_domination_reduction>(status.n, status.m);
-        break;                                    
-    case 5:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,twin_reduction>(status.n, status.m);
-        break;                                    
-    case 6:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 7:                                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 8: // no degree_one                      
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 9: // no sunflower                       
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 10: // no edge_domination                
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 11: // no node_domination                
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, edge_domination_reduction, sunflower_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 12: // no twin                           
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
-        break;                                    
-    case 13: // no unconfined                     
-        status.reductions = make_reduction_vector<edge_degree_one_reduction,node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction>(status.n, status.m);
+        break;
+    case 2:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, sunflower_reduction>(status.n, status.m);
+        break;
+    case 3:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_domination_reduction>(status.n, status.m);
+        break;
+    case 4:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, edge_domination_reduction>(status.n, status.m);
+        break;
+    case 5:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, twin_reduction>(status.n, status.m);
+        break;
+    case 6:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 7:
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 8: // no degree_one
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 9: // no sunflower
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 10: // no edge_domination
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 11: // no node_domination
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, edge_domination_reduction, sunflower_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 12: // no twin
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 13: // no unconfined
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
         break;
     default:
         break;
@@ -94,7 +94,7 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
     if (is_status == IS_status::included)
     {
         status.IS_size++;
-        if (USE_NEIGHBORHOOD_ARRAY)
+        if (g->has_neighbors)
         {
             for (NodeID i = 0; i < g->Nd[u]; i++)
             {
@@ -132,28 +132,30 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
             status.edge_status[edge] = false;
         }
 
-        hypergraph_remove_neighborhood(status.hgraph, u, &node_set, &edge_set);
+        hypergraph_remove_neighborhood(status.hgraph, u, &node_set, &node_set2, &edge_set, node_vec);
     }
     else
     {
         add_next_level_neighborhood(u);
-        hypergraph_remove_vertex(g, u);
+        hypergraph_remove_vertex(g, u, &node_set);
     }
-
-    // assert(hypergraph_validate(status.hgraph));
 }
 
 void MISH_algorithm::init_reduction_step()
 {
-    if (!status.reductions[active_reduction_index]->has_run)
+    auto& reduction = status.reductions[active_reduction_index];
+    if (!reduction->has_run)
     {
-        if (status.reductions[active_reduction_index]->vertex_rule)
-            status.reductions[active_reduction_index]->marker.fill_current_ascending(status.n);
+        if (reduction->vertex_rule)
+            reduction->marker.fill_current_ascending(status.n);
         else
-            status.reductions[active_reduction_index]->marker.fill_current_ascending(status.m);
+            reduction->marker.fill_current_ascending(status.m);
 
-        status.reductions[active_reduction_index]->marker.clear_next();
-        status.reductions[active_reduction_index]->has_run = true;
+        reduction->marker.clear_next();
+        reduction->has_run = true;
+
+        if (!status.hgraph->has_neighbors && reduction->use_neighbors && BUILD_ON_THE_FLY_NEIGHBORHOOD)
+            hypergraph_build_neighbors(status.hgraph, &node_set);
     }
     else
     {
@@ -181,7 +183,6 @@ void MISH_algorithm::reduce_graph()
                 break;
 
             active_reduction_index = reduction_map[reduction->get_reduction_type()];
-            assert(active_reduction_index == reduction_index);
 
             init_reduction_step();
             progress = reduction->reduce(this);
@@ -248,10 +249,16 @@ void MISH_algorithm::add_next_level_edge(NodeID e)
     }
 }
 
+void MISH_algorithm::add_next_level_edges_of_node(NodeID u)
+{
+    for (NodeID i = 0; i < status.hgraph->Vd[u]; i++)
+    {
+        NodeID e = status.hgraph->V[u][i];
+        add_next_level_edge(e);
+    }
+}
 void MISH_algorithm::add_next_level_nodes_of_edge(NodeID e)
 {
-    add_next_level_edge(e);
-
     for (NodeID i = 0; i < status.hgraph->Ed[e]; i++)
     {
         NodeID v = status.hgraph->E[e][i];

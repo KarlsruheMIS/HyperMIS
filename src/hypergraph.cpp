@@ -82,6 +82,7 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     hypergraph *g = (hypergraph *)malloc(sizeof(hypergraph));
     g->n = n;
     g->m = m;
+    g->has_neighbors = 0;
 
     g->Vd = (NodeID *)malloc(sizeof(NodeID) * n);
     g->Va = (NodeID *)malloc(sizeof(NodeID) * n);
@@ -89,18 +90,8 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     g->Ed = (NodeID *)malloc(sizeof(NodeID) * m);
     g->Ea = (NodeID *)malloc(sizeof(NodeID) * m);
 
-    if (USE_NEIGHBORHOOD_ARRAY)
-    {
-        g->Nd = (NodeID *)malloc(sizeof(NodeID) * n);
-        g->Na = (NodeID *)malloc(sizeof(NodeID) * n);
-        g->N = (NodeID **)malloc(sizeof(NodeID *) * n);
-    }
-    else
-    {
-        g->Nd = NULL;
-        g->Na = NULL;
-        g->N = NULL;
-    }
+    g->Na = NULL;
+    g->N = NULL;
 
     g->V = (NodeID **)malloc(sizeof(NodeID *) * n);
     g->E = (NodeID **)malloc(sizeof(NodeID *) * m);
@@ -110,12 +101,6 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
         g->Vd[i] = 0;
         g->Va[i] = MIN_ALLOC;
         g->V[i] = (NodeID *)malloc(sizeof(NodeID) * g->Va[i]);
-        if (USE_NEIGHBORHOOD_ARRAY)
-        {
-            g->Nd[i] = 0;
-            g->Na[i] = MIN_ALLOC;
-            g->N[i] = (NodeID *)malloc(sizeof(NodeID) * g->Na[i]);
-        }
     }
 
     for (NodeID i = 0; i < m; i++)
@@ -163,7 +148,7 @@ hypergraph *hypergraph_parse(FILE *f)
 
 NodeID *hypergraph_get_neighborhood(hypergraph *g, NodeID u, NodeID *neighborhood, NodeID &deg, fast_set &node_set)
 {
-    if (USE_NEIGHBORHOOD_ARRAY)
+    if (g->has_neighbors)
     {
         deg = g->Nd[u];
         return g->N[u];
@@ -185,13 +170,53 @@ NodeID *hypergraph_get_neighborhood(hypergraph *g, NodeID u, NodeID *neighborhoo
     return neighborhood;
 }
 
+NodeID *hypergraph_get_neighborhood_and_set(hypergraph *g, NodeID u, NodeID *neighborhood, NodeID &deg, fast_set &node_set)
+{
+    node_set.clear();
+    node_set.add(u);
+
+    if (g->has_neighbors)
+    {
+        for (NodeID i = 0; i < g->Nd[u]; i++)
+        {
+            NodeID v = g->N[u][i];
+            node_set.add(v);
+        }
+        node_set.add(u);
+        deg = g->Nd[u];
+        return g->N[u];
+    }
+    deg = 0;
+    for (NodeID i = 0; i < g->Vd[u]; i++)
+    {
+        NodeID e = g->V[u][i];
+        for (NodeID j = 0; j < g->Ed[e]; j++)
+        {
+            NodeID v = g->E[e][j];
+            if (node_set.add(v))
+                neighborhood[deg++] = v;
+        }
+    }
+    std::sort(neighborhood, neighborhood + deg);
+    return neighborhood;
+}
+
 void hypergraph_build_neighbors(hypergraph *g, fast_set *fs)
 {
-    if (!USE_NEIGHBORHOOD_ARRAY)
+    if (g->has_neighbors)
         return;
+
+    g->Nd = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    g->Na = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    g->N = (NodeID **)malloc(sizeof(NodeID *) * g->n);
+    g->has_neighbors = 1;
+
     for (NodeID v = 0; v < g->n; v++)
     {
-        NodeID k = 0;
+        g->Nd[v] = 0;
+        g->Na[v] = MIN_ALLOC;
+        g->N[v] = (NodeID *)malloc(sizeof(NodeID) * g->Na[v]);
+
         fs->clear();
         fs->add(v);
         for (NodeID i = 0; i < g->Vd[v]; i++)
@@ -201,15 +226,11 @@ void hypergraph_build_neighbors(hypergraph *g, fast_set *fs)
             {
                 NodeID u = g->E[e][j];
                 if (fs->add(u))
-                {
-                    assert(v != u);
                     hypergraph_append_element(g->Nd + v, g->Na + v, g->N + v, u);
-                }
             }
         }
+        qsort(g->N[v], g->Nd[v], sizeof(NodeID), hypergraph_compare);
     }
-    for (NodeID i = 0; i < g->n; i++)
-        qsort(g->N[i], g->Nd[i], sizeof(NodeID), hypergraph_compare);
 }
 
 void hypergraph_sort(hypergraph *g)
@@ -217,7 +238,8 @@ void hypergraph_sort(hypergraph *g)
     for (NodeID i = 0; i < g->n; i++)
     {
         qsort(g->V[i], g->Vd[i], sizeof(NodeID), hypergraph_compare);
-        if (USE_NEIGHBORHOOD_ARRAY)
+
+        if (g->has_neighbors)
             qsort(g->N[i], g->Nd[i], sizeof(NodeID), hypergraph_compare);
     }
 
@@ -234,7 +256,7 @@ void hypergraph_sort(hypergraph *g)
         }
         g->Vd[i] = d;
 
-        if (USE_NEIGHBORHOOD_ARRAY)
+        if (g->has_neighbors)
         {
             d = 0;
             for (NodeID j = 0; j < g->Nd[i]; j++)
@@ -256,32 +278,32 @@ void hypergraph_sort(hypergraph *g)
         g->Ed[i] = d;
     }
 }
- 
+
 // type=0 g->V  type=1 g->E  type=2 g->N
-void hypergraph_reset(hypergraph *g, NodeID element, int type)
+void hypergraph_reset(hypergraph *g, NodeID v, int type)
 {
     switch (type)
     {
     case 0:
-        g->Vd[element] = 0;
-        if (g->Va[element] == MIN_ALLOC)
+        g->Vd[v] = 0;
+        if (g->Va[v] == MIN_ALLOC)
             break;
-        g->Va[element] = MIN_ALLOC;
-        g->V[element] = (NodeID *)realloc(g->V[element], sizeof(NodeID) * g->Va[element]);
+        g->Va[v] = MIN_ALLOC;
+        g->V[v] = (NodeID *)realloc(g->V[v], sizeof(NodeID) * g->Va[v]);
         break;
     case 1:
-        g->Ed[element] = 0;
-        if (g->Ea[element] == MIN_ALLOC)
+        g->Ed[v] = 0;
+        if (g->Ea[v] == MIN_ALLOC)
             break;
-        g->Ea[element] = MIN_ALLOC;
-        g->E[element] = (NodeID *)realloc(g->E[element], sizeof(NodeID) * g->Ea[element]);
+        g->Ea[v] = MIN_ALLOC;
+        g->E[v] = (NodeID *)realloc(g->E[v], sizeof(NodeID) * g->Ea[v]);
         break;
     case 2:
-        g->Nd[element] = 0;
-        if (g->Na[element] == MIN_ALLOC)
+        g->Nd[v] = 0;
+        if (g->Na[v] == MIN_ALLOC)
             break;
-        g->Na[element] = MIN_ALLOC;
-        g->N[element] = (NodeID *)realloc(g->N[element], sizeof(NodeID) * g->Na[element]);
+        g->Na[v] = MIN_ALLOC;
+        g->N[v] = (NodeID *)realloc(g->N[v], sizeof(NodeID) * g->Na[v]);
         break;
     }
 }
@@ -305,8 +327,18 @@ void hypergraph_remove_set(NodeID *vec, NodeID &size, fast_set *set)
     size = remaining;
 }
 
-void hypergraph_remove_vertex(hypergraph *g, NodeID u)
+void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set *processed)
 {
+    if (g->has_neighbors)
+    {
+        for (NodeID i = 0; i < g->Nd[u]; i++)
+        {
+            NodeID v = g->N[u][i];
+            hypergraph_remove_element(g->N[v], g->Nd[v], u);
+        }
+        hypergraph_reset(g, u, 2);
+    }
+
     for (NodeID i = 0; i < g->Vd[u]; i++)
     {
         NodeID e = g->V[u][i];
@@ -318,17 +350,6 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u)
     }
 
     hypergraph_reset(g, u, 0);
-
-    if (g->Nd)
-    {
-        for (NodeID i = 0; i < g->Nd[u]; i++)
-        {
-            NodeID v = g->N[u][i];
-            assert(v != u);
-            hypergraph_remove_element(g->N[v], g->Nd[v], u);
-        }
-        hypergraph_reset(g, u, 2);
-    }
 }
 
 void hypergraph_remove_size_one_edge(hypergraph *g, NodeID e)
@@ -375,24 +396,31 @@ void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *
     }
 }
 
-// remove edges and all containing vertices (include u operation)
-void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fast_set *edges)
+// remove edges and vertices (include u operation)
+void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fast_set *processed, fast_set *edges, NodeID *changed)
 {
-
     // get vertices and edges that will be deleted to skip fixing their neighborhoods
     nodes->clear();
     edges->clear();
+    nodes->add(u);
+    processed->clear();
+    processed->add(u);
+
     for (NodeID i = 0; i < g->Vd[u]; i++)
     {
         NodeID e = g->V[u][i];
         edges->add(e);
+
         for (NodeID j = 0; j < g->Ed[e]; j++)
         {
             NodeID v = g->E[e][j];
             nodes->add(v);
         }
     }
-    if (g->Nd)
+
+    NodeID changed_size = 0;
+    // collect remaining vertices in changed that see changes in their neighborhood
+    if (g->has_neighbors)
     {
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
@@ -400,49 +428,88 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
             for (NodeID j = 0; j < g->Nd[v]; j++)
             {
                 NodeID w = g->N[v][j];
-                if (!nodes->get(w))
-                    hypergraph_remove_set(g->N[w], g->Nd[w], nodes);
+                if (processed->add(w) && !nodes->get(w))
+                    changed[changed_size++] = w;
             }
         }
     }
-
-    for (NodeID i = 0; i < g->Vd[u]; i++)
+    else
     {
-        NodeID f = g->V[u][i];
-        for (NodeID l = 0; l < g->Ed[f]; l++)
+        for (NodeID i = 0; i < g->Vd[u]; i++)
         {
-            NodeID w = g->E[f][l];
-            if (w == u)
-                continue;
-
-            for (NodeID j = 0; j < g->Vd[w]; j++)
+            NodeID e = g->V[u][i];
+            for (NodeID j = 0; j < g->Ed[e]; j++)
             {
-                NodeID e = g->V[w][j];
-                if (edges->get(e))
+                // v will be excluded, neighbors are subject to change
+                NodeID v = g->E[e][j];
+
+                if (!processed->add(v))
                     continue;
 
-                for (NodeID k = 0; k < g->Ed[e]; k++)
+                for (NodeID k = 0; k < g->Vd[v]; k++)
                 {
-                    NodeID v = g->E[e][k];
-                    if (!nodes->get(v))
-                        hypergraph_remove_set(g->V[v], g->Vd[v], edges);
+                    NodeID f = g->V[u][i];
+                    if (edges->get(f))
+                        continue;
+
+                    for (NodeID l = 0; l < g->Ed[f]; l++)
+                    {
+                        NodeID w = g->E[f][l];
+                        if (processed->add(w) && !nodes->get(w))
+                            changed[changed_size++] = w;
+                    }
                 }
-
-                hypergraph_remove_set(g->E[e], g->Ed[e], nodes);
-                if (g->Ed[e] == 1)
-                    hypergraph_remove_size_one_edge(g, e);
             }
-
-            hypergraph_reset(g, w, 0);
         }
-        hypergraph_reset(g, f, 1);
+    }
+
+    for (NodeID i = 0; i < changed_size; i++)
+    {
+        NodeID v = changed[i];
+        hypergraph_remove_set(g->V[v], g->Vd[v], edges);
+    }
+
+    if (g->has_neighbors)
+    {
+        for (NodeID i = 0; i < changed_size; i++)
+        {
+            NodeID v = changed[i];
+            hypergraph_remove_set(g->N[v], g->Nd[v], nodes);
+        }
+    }
+
+    processed->clear();
+    processed->add(u);
+    for (NodeID i = 0; i < g->Vd[u]; i++)
+    {
+        NodeID e = g->V[u][i];
+        for (NodeID j = 0; j < g->Ed[e]; j++)
+        {
+            NodeID v = g->E[e][j];
+
+            if (!processed->add(v))
+                continue;
+
+            for (NodeID k = 0; k < g->Vd[v]; k++)
+            {
+                NodeID f = g->V[v][k];
+                if (!edges->add(f))
+                    continue;
+                hypergraph_remove_set(g->E[f], g->Ed[f], nodes);
+                if (g->Ed[f] == 1)
+                    hypergraph_remove_size_one_edge(g, f);
+            }
+            hypergraph_reset(g, v, 0); // excluded vertices
+        }
+        hypergraph_reset(g, e, 1);
     }
     hypergraph_reset(g, u, 0);
+    // assert(hypergraph_validate(g));
 }
 
 bool hypergraph_is_neighbor(hypergraph *g, NodeID u, NodeID neighbor)
 {
-    if (USE_NEIGHBORHOOD_ARRAY)
+    if (g->has_neighbors)
     {
         NodeID p = lower_bound(g->N[u], g->Nd[u], neighbor);
         return p < g->Nd[u] && g->N[u][p] == neighbor;
@@ -501,10 +568,21 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     }
     assert(e <= red_m);
 
-    if (g->Nd && rg->Nd)
+    if (g->has_neighbors)
     {
+
+        rg->Nd = (NodeID *)malloc(sizeof(NodeID) * g->n);
+        rg->Na = (NodeID *)malloc(sizeof(NodeID) * g->n);
+        rg->N = (NodeID **)malloc(sizeof(NodeID *) * g->n);
+        rg->has_neighbors = 1;
+
         for (NodeID u_new = 0; u_new < red_n; u_new++)
         {
+
+            rg->Nd[u_new] = 0;
+            rg->Na[u_new] = MIN_ALLOC;
+            rg->N[u_new] = (NodeID *)malloc(sizeof(NodeID) * g->Na[u_new]);
+
             NodeID u = remap[u_new];
             for (NodeID j = 0; j < g->Nd[u]; j++)
             {
@@ -556,66 +634,6 @@ graph *hypergraph_clique_expansion(hypergraph *hg)
     return g;
 }
 
-hypergraph *hypergraph_copy(hypergraph *g)
-{
-    hypergraph *c = (hypergraph *)malloc(sizeof(hypergraph));
-
-    *c = (hypergraph){.n = g->n, .m = g->m};
-
-    c->Vd = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->Va = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-    c->V = (NodeID **)malloc(sizeof(NodeID *) * c->n);
-
-    for (NodeID i = 0; i < c->n; i++)
-    {
-        c->Vd[i] = g->Vd[i];
-        c->Va[i] = g->Va[i];
-        c->V[i] = (NodeID *)malloc(sizeof(int) * c->Va[i]);
-
-        for (NodeID j = 0; j < c->Vd[i]; j++)
-            c->V[i][j] = g->V[i][j];
-    }
-
-    if (g->Nd)
-    {
-        c->Nd = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-        c->Na = (NodeID *)malloc(sizeof(NodeID *) * c->n);
-        c->N = (NodeID **)malloc(sizeof(NodeID *) * c->n);
-
-        for (NodeID i = 0; i < c->n; i++)
-        {
-            c->Nd[i] = g->Nd[i];
-            c->Na[i] = g->Na[i];
-            c->N[i] = (NodeID *)malloc(sizeof(int) * c->Na[i]);
-
-            for (NodeID j = 0; j < c->Nd[i]; j++)
-                c->N[i][j] = g->N[i][j];
-        }
-    }
-    else
-    {
-        c->Nd = NULL;
-        c->Na = NULL;
-        c->N = NULL;
-    }
-
-    c->Ed = (NodeID *)malloc(sizeof(int *) * c->m);
-    c->Ea = (NodeID *)malloc(sizeof(int *) * c->m);
-    c->E = (NodeID **)malloc(sizeof(int *) * c->m);
-
-    for (NodeID i = 0; i < c->m; i++)
-    {
-        c->Ed[i] = g->Ed[i];
-        c->Ea[i] = g->Ea[i];
-        c->E[i] = (NodeID *)malloc(sizeof(int) * c->Ea[i]);
-
-        for (NodeID j = 0; j < c->Ed[i]; j++)
-            c->E[i][j] = g->E[i][j];
-    }
-
-    return c;
-}
-
 bool hypergraph_validate_edge(hypergraph *g, NodeID e)
 {
     for (NodeID i = 0; i < g->Ed[e]; i++)
@@ -649,7 +667,7 @@ bool hypergraph_validate_vertex(hypergraph *g, NodeID u)
             return 0;
     }
 
-    if (g->Nd)
+    if (g->has_neighbors)
     {
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
@@ -686,17 +704,22 @@ void hypergraph_free(hypergraph *g)
 {
     free(g->Vd);
     free(g->Va);
-    free(g->Nd);
-    free(g->Na);
+
     for (NodeID i = 0; i < g->n; i++)
-    {
         free(g->V[i]);
-        if (g->N)
+
+    if (g->has_neighbors)
+    {
+        free(g->Nd);
+        free(g->Na);
+        for (NodeID i = 0; i < g->n; i++)
             free(g->N[i]);
+
+        free(g->N);
     }
 
+
     free(g->V);
-    free(g->N);
 
     free(g->Ed);
     free(g->Ea);

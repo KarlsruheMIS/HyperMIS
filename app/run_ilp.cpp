@@ -26,6 +26,7 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
                    "-e \t\tClique expand hypergraph to graph before ILP run.\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
+                   "-f \t\tStore neighborhood array only when needed\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnveg:t:s:k:o:r:")) != -1)
+    while ((command = getopt(argc, argv, "hnvefg:t:s:k:o:r:")) != -1)
     {
         switch (command)
         {
@@ -47,7 +48,12 @@ int main(int argc, char **argv)
             printf("%s\n", help);
             return 0;
         case 'n':
-            USE_NEIGHBORHOOD_ARRAY = 1;
+            if (!BUILD_ON_THE_FLY_NEIGHBORHOOD)
+                USE_NEIGHBORHOOD_ARRAY = 1;
+            break;
+        case 'f':
+            BUILD_ON_THE_FLY_NEIGHBORHOOD = 1;
+            USE_NEIGHBORHOOD_ARRAY = 0;
             break;
         case 'v':
             VERBOSE = 1;
