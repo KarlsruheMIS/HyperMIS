@@ -134,10 +134,16 @@ int main(int argc, char **argv)
     std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
 
     double avg_e_size = 0.0;
-    for (NodeID e = 0; e < rg->m; e++)
-        avg_e_size += rg->Ed[e];
-    avg_e_size = avg_e_size / (rg->m);
-
+    if (rg->m == 0)
+    {
+        avg_e_size = 0;
+    }
+    else
+    {
+        for (NodeID e = 0; e < rg->m; e++)
+            avg_e_size += rg->Ed[e];
+        avg_e_size = avg_e_size / (rg->m);
+    }
 
     if (EXPERIMENT)
     {
