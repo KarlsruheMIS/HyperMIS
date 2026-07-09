@@ -525,7 +525,6 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
     if (deg_v > MAX_DEGREE)
       continue;
 
-    assert(deg_v != 0);
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
     if (elapsed > TIME_KERNEL_SECONDS)
       break;
