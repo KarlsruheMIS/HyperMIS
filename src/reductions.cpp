@@ -253,7 +253,7 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
           for (NodeID j = 0; j < g->Ed[e]; j++)
           {
             NodeID neighbor = g->E[e][j];
-            if (g->Vd[neighbor] > NEIGHBORS_SIZE)
+            if (g->Vd[neighbor] > MAX_DEGREE)
               continue;
 
             if (extend_neighborhood_S.add(neighbor))
