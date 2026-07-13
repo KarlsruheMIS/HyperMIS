@@ -25,7 +25,9 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-s \tUser specific seed\n"
                    "-o path \tPath to the solution\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
-                   "-f \t\tStore neighborhood array only when needed\n"
+                   "-d \t\tOn-demand: store a vertex's neighborhood only once a reduction requests it, and patch it in place afterwards\n"
+                   "-M n \t\tMax vertex degree considered by the reductions \t\t\t default 100\n"
+                   "-N n \t\tMax neighborhood size considered by the reductions \t\t default 200\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -39,7 +41,7 @@ int main(int argc, char **argv)
 
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnvefg:t:s:k:o:r:")) != -1)
+    while ((command = getopt(argc, argv, "hdnveg:t:s:k:o:r:M:N:")) != -1)
     {
         switch (command)
         {
@@ -48,11 +50,11 @@ int main(int argc, char **argv)
             return 0;
             break;
         case 'n':
-            if (!BUILD_ON_THE_FLY_NEIGHBORHOOD)
+            if (!ON_DEMAND_NEIGHBORHOOD)
                 USE_NEIGHBORHOOD_ARRAY = 1;
             break;
-        case 'f':
-            BUILD_ON_THE_FLY_NEIGHBORHOOD = 1;
+        case 'd':
+            ON_DEMAND_NEIGHBORHOOD = 1;
             USE_NEIGHBORHOOD_ARRAY = 0;
             break;
         case 'v':
@@ -80,6 +82,12 @@ int main(int argc, char **argv)
                 REDUCTION_CONFIG = atoi(optarg);
             else
                 return 0;
+            break;
+        case 'M':
+            MAX_DEGREE = atoi(optarg);
+            break;
+        case 'N':
+            NEIGHBORS_SIZE = atoi(optarg);
             break;
         case '?':
             return 1;
@@ -112,6 +120,8 @@ int main(int argc, char **argv)
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
     if (USE_NEIGHBORHOOD_ARRAY)
         hypergraph_build_neighbors(g, &(mis_alg->node_set));
+    else if (ON_DEMAND_NEIGHBORHOOD)
+        hypergraph_init_on_demand(g);
 
     mis_alg->reduce_graph();
 

@@ -94,7 +94,7 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
     if (is_status == IS_status::included)
     {
         status.IS_size++;
-        if (g->has_neighbors)
+        if (g->has_neighbors && !g->on_demand)
         {
             for (NodeID i = 0; i < g->Nd[u]; i++)
             {
@@ -153,9 +153,6 @@ void MISH_algorithm::init_reduction_step()
 
         reduction->marker.clear_next();
         reduction->has_run = true;
-
-        if (!status.hgraph->has_neighbors && reduction->use_neighbors && BUILD_ON_THE_FLY_NEIGHBORHOOD)
-            hypergraph_build_neighbors(status.hgraph, &node_set);
     }
     else
     {
@@ -166,6 +163,27 @@ void MISH_algorithm::init_reduction_step()
 
 void MISH_algorithm::reduce_graph()
 {
+    // Staged escalation of node_domination's reach: reduce to a fixpoint at
+    // factor 1 first (so the cheap rules finish), then re-sweep the smaller
+    // residual at the full NODE_DOM_FACTOR. Without escalation it is a single
+    // stage at the requested factor.
+    const size_t target_factor = NODE_DOM_FACTOR;
+    std::vector<size_t> stages;
+    if (target_factor > 1)
+        stages = {1, target_factor};
+    else
+        stages = {target_factor};
+
+    for (size_t stage = 0; stage < stages.size(); stage++)
+    {
+        NODE_DOM_FACTOR = stages[stage];
+        if (stage > 0)
+        {
+            // widen the reach and re-scan the residual from scratch
+            for (auto &reduction : status.reductions)
+                reduction->has_run = false;
+        }
+
     bool progress = false;
 
     do
@@ -207,7 +225,9 @@ void MISH_algorithm::reduce_graph()
             }
         }
     } while (progress && status.remaining_nodes > 0);
+    }
 
+    NODE_DOM_FACTOR = target_factor;
     return;
 }
 
@@ -249,14 +269,6 @@ void MISH_algorithm::add_next_level_edge(NodeID e)
     }
 }
 
-void MISH_algorithm::add_next_level_edges_of_node(NodeID u)
-{
-    for (NodeID i = 0; i < status.hgraph->Vd[u]; i++)
-    {
-        NodeID e = status.hgraph->V[u][i];
-        add_next_level_edge(e);
-    }
-}
 void MISH_algorithm::add_next_level_nodes_of_edge(NodeID e)
 {
     for (NodeID i = 0; i < status.hgraph->Ed[e]; i++)
