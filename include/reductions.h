@@ -90,12 +90,9 @@ struct general_reduction
 	virtual reduction_type get_reduction_type() const = 0;
 	virtual std::string get_reduction_name() const = 0;
 	virtual bool reduce(MISH_algorithm *mish_alg) = 0;
-	virtual void restore(MISH_algorithm *mish_alg) {}
-	virtual void apply(MISH_algorithm *mish_alg) {}
 
 	bool has_run = false;
 	bool vertex_rule = true;
-	bool use_neighbors = false;
 	element_marker<NodeID> marker;
 };
 
@@ -143,7 +140,6 @@ struct node_domination_reduction : public general_reduction
 {
 	node_domination_reduction(size_t n, size_t m) : general_reduction(n)
 	{
-		use_neighbors = true;
 	}
 	~node_domination_reduction() {}
 	virtual node_domination_reduction *clone() const final { return new node_domination_reduction(*this); }
@@ -157,7 +153,6 @@ struct twin_reduction : public general_reduction
 {
 	twin_reduction(size_t n, size_t m) : general_reduction(n)
 	{
-		use_neighbors = true;
 	}
 	~twin_reduction() {}
 	virtual twin_reduction *clone() const final { return new twin_reduction(*this); }
@@ -165,19 +160,12 @@ struct twin_reduction : public general_reduction
 	virtual reduction_type get_reduction_type() const final { return reduction_type::twin; }
 	virtual std::string get_reduction_name() const final { return "twin"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
-
-	struct Twin
-	{
-		std::vector<NodeID> twin_nodes;
-		size_t min_degree;
-	};
 };
 
 struct unconfined_reduction : public general_reduction
 {
 	unconfined_reduction(size_t n, size_t m) : general_reduction(n)
 	{
-		use_neighbors = true;
 	}
 	~unconfined_reduction() {}
 	virtual unconfined_reduction *clone() const final { return new unconfined_reduction(*this); }
@@ -280,8 +268,6 @@ static inline int set_is_equal(const NodeID *A, NodeID a, const NodeID *B, NodeI
 static inline int set_is_subset(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
 // Test if A is a subset of B, ignoring x from A
 static inline int set_is_subset_except_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x);
-// Test if A is a subset of B, ignoring x and negative numbers from A
-static inline int set_is_subset_except_one_positive(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x);
 // Test if A \ B = \emtpyset (return -1) if A\B = {v} (return v) else return -2
 static inline int set_difference_check(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
 // Test if |A \cap B| == 1

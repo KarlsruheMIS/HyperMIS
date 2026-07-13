@@ -7,6 +7,13 @@
 
 typedef MISH_algorithm::IS_status IS_status;
 
+// True when g->N[v]/g->Nd[v] may be read directly. In on-demand mode only
+// populated entries are readable; the rest fall back to the incidence walk.
+static inline bool nbrs_ready(const hypergraph *g, NodeID v)
+{
+  return g->has_neighbors && (!g->on_demand || g->N_valid[v]);
+}
+
 // Test if A and B are equal
 static inline int set_is_equal(const NodeID *A, NodeID a, const NodeID *B, NodeID b)
 {
@@ -165,7 +172,7 @@ bool node_degree_one_reduction::reduce(MISH_algorithm *mish_alg)
     {
       mish_alg->set(v, IS_status::included);
     }
-    else if (g->has_neighbors)
+    else if (nbrs_ready(g, v))
     {
       if (g->Nd[v] < 2)
         mish_alg->set(v, IS_status::included);
@@ -236,7 +243,7 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
       extend_neighborhood_S.add(next_node);
       neighborhood_S[neighborhood_S_size++] = next_node;
 
-      if (g->has_neighbors)
+      if (nbrs_ready(g, next_node))
       {
         for (NodeID i = 0; i < g->Nd[next_node]; i++)
         {
@@ -374,6 +381,11 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
   NodeID old_n = status.remaining_nodes;
   hypergraph *g = status.hgraph;
 
+  // node_domination is the workhorse that most benefits from a wider reach, so
+  // it scales the degree / neighborhood-size bounds by NODE_DOM_FACTOR.
+  const NodeID dom_max_degree = MAX_DEGREE * NODE_DOM_FACTOR;
+  const NodeID dom_neighbors_size = NEIGHBORS_SIZE * NODE_DOM_FACTOR;
+
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
     NodeID v = marker.current_element(v_idx);
@@ -381,7 +393,7 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
     if (status.node_status[v] != IS_status::not_set)
       continue;
 
-    if (g->Vd[v] > MAX_DEGREE)
+    if (g->Vd[v] > dom_max_degree)
       continue;
 
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
@@ -391,7 +403,7 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
     NodeID dominated = 0;
     NodeID deg_v;
     NodeID *n = hypergraph_get_neighborhood(g, v, neighbors, deg_v, mish_alg->node_set);
-    if (deg_v > NEIGHBORS_SIZE)
+    if (deg_v > dom_neighbors_size)
       continue;
 
     if (deg_v <= 1)
@@ -403,8 +415,20 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
     for (NodeID i = 0; i < deg_v; i++)
     {
       NodeID u = n[i];
-      assert(status.node_status[u] == IS_status::not_set);
-      if (g->Vd[u] == 0 || g->Vd[u] > MAX_DEGREE)
+      // n may hold an already-decided vertex left stale in the cache. Drop it
+      // from the live neighborhood (so it is never seen again) and re-examine
+      // this slot. On the on-the-fly path n is a private buffer, so leave it.
+      if (status.node_status[u] != IS_status::not_set)
+      {
+        if (g->has_neighbors)
+        {
+          hypergraph_remove_element(g->N[v], g->Nd[v], u);
+          deg_v--;
+          i--;
+        }
+        continue;
+      }
+      if (g->Vd[u] == 0 || g->Vd[u] > dom_max_degree)
         continue;
 
       NodeID deg_u;
@@ -419,13 +443,13 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
         mish_alg->set(u, IS_status::excluded);
 
         if (status.hgraph->has_neighbors)
-        { // in this case n has changed since u was removed from the neighborhood
+        { // n is the live g->N[v] (-f or on-demand); it shrank when u was removed
           i--;
           deg_v--;
         }
         else
-        {
-          dominated++; 
+        { // n is a private on-the-fly buffer: it does not shrink
+          dominated++;
         }
 
         if (deg_v - dominated == 1)
@@ -539,14 +563,33 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
       continue;
     }
 
-    // get smallest degree neighbor to find twin candidates in its neighborhood
-    NodeID minD_n = nv[0];
-    for (size_t i = 1; i < dv; i++)
+    // Drop any already-decided vertices left stale in v's neighborhood (keeping
+    // node_v in sync), then pick the smallest-degree live neighbor whose
+    // neighborhood is scanned for twin candidates.
+    NodeID minD_n = 0;
+    bool have_min = false;
+    for (size_t i = 0; i < dv;)
     {
       NodeID u = nv[i];
-      assert(status.node_status[u] == IS_status::not_set);
-      if (g->Vd[minD_n] > g->Vd[u])
+      if (status.node_status[u] != IS_status::not_set)
+      {
+        if (g->has_neighbors)
+          hypergraph_remove_element(g->N[v], g->Nd[v], u);
+        node_v.remove(u);
+        dv--;
+        continue; // array shifted; re-check slot i
+      }
+      if (!have_min || g->Vd[minD_n] > g->Vd[u])
+      {
         minD_n = u;
+        have_min = true;
+      }
+      i++;
+    }
+    if (!have_min)
+    {
+      mish_alg->set(v, IS_status::included);
+      continue;
     }
 
     NodeID NminD;
@@ -563,6 +606,17 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
       NodeID t = t_cand[i];
       if (node_v.get(t))
         continue;
+      if (status.node_status[t] != IS_status::not_set)
+      {
+        // decided vertex left stale in minD_n's neighborhood; drop it
+        if (g->has_neighbors)
+        {
+          hypergraph_remove_element(g->N[minD_n], g->Nd[minD_n], t);
+          NminD--;
+          i--;
+        }
+        continue;
+      }
 
       NodeID dt;
       NodeID *nt = hypergraph_get_neighborhood(g, t, vec2, dt, node_t);

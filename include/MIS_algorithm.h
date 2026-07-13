@@ -63,8 +63,6 @@ public:
     std::vector<NodeID> m_reduced;
     std::vector<double> t_reduced;
 
-    static const NodeID RESTRICTION_SIZE = 100000;
-
     MISH_algorithm(hypergraph* hgr);
     ~MISH_algorithm();
 
@@ -76,7 +74,6 @@ public:
     void remove_edge(NodeID e);
     void add_next_level_node(NodeID v);
     void add_next_level_edge(NodeID e);
-    void add_next_level_edges_of_node(NodeID v);
     void add_next_level_nodes_of_edge(NodeID e);
     void add_next_level_neighborhood(NodeID v);
 };

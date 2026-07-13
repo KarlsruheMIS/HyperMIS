@@ -49,10 +49,6 @@ static inline void parse_unsigned_int(FILE *f, int *v)
     ungetc(c, f);
 }
 
-static inline int hypergraph_compare(const void *a, const void *b)
-{
-    return (*(NodeID *)a - *(NodeID *)b);
-}
 
 static inline NodeID lower_bound(const NodeID *A, NodeID n, NodeID x)
 {
@@ -83,6 +79,9 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     g->n = n;
     g->m = m;
     g->has_neighbors = 0;
+    g->on_demand = 0;
+    g->N_valid = NULL;
+    g->nbr_scratch = NULL;
 
     g->Vd = (NodeID *)malloc(sizeof(NodeID) * n);
     g->Va = (NodeID *)malloc(sizeof(NodeID) * n);
@@ -147,10 +146,17 @@ hypergraph *hypergraph_parse(FILE *f)
     return g;
 }
 
+static void hypergraph_on_demand_heal(hypergraph *g, NodeID u);
+
 NodeID *hypergraph_get_neighborhood(hypergraph *g, NodeID u, NodeID *neighborhood, NodeID &deg, fast_set &node_set)
 {
     if (g->has_neighbors)
     {
+        // on-demand: heal on miss, then return the live array (zero-copy, like
+        // -f). Entries are kept consistent by vertex-removal patching; edge
+        // removals may leave a stale neighbor, exactly as under -f.
+        if (g->on_demand && !g->N_valid[u])
+            hypergraph_on_demand_heal(g, u);
         deg = g->Nd[u];
         return g->N[u];
     }
@@ -178,6 +184,8 @@ NodeID *hypergraph_get_neighborhood_and_set(hypergraph *g, NodeID u, NodeID *nei
 
     if (g->has_neighbors)
     {
+        if (g->on_demand && !g->N_valid[u])
+            hypergraph_on_demand_heal(g, u);
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
             NodeID v = g->N[u][i];
@@ -230,54 +238,60 @@ void hypergraph_build_neighbors(hypergraph *g, fast_set *fs)
                     hypergraph_append_element(g->Nd + v, g->Na + v, g->N + v, u);
             }
         }
-        qsort(g->N[v], g->Nd[v], sizeof(NodeID), hypergraph_compare);
+        std::sort(g->N[v], g->N[v] + g->Nd[v]);
     }
 }
 
-void hypergraph_sort(hypergraph *g)
+void hypergraph_init_on_demand(hypergraph *g)
 {
-    for (NodeID i = 0; i < g->n; i++)
-    {
-        qsort(g->V[i], g->Vd[i], sizeof(NodeID), hypergraph_compare);
+    if (g->has_neighbors)
+        return;
 
-        if (g->has_neighbors)
-            qsort(g->N[i], g->Nd[i], sizeof(NodeID), hypergraph_compare);
+    g->Nd = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    g->Na = (NodeID *)malloc(sizeof(NodeID) * g->n);
+    g->N = (NodeID **)malloc(sizeof(NodeID *) * g->n);
+    g->N_valid = (bool *)malloc(sizeof(bool) * g->n);
+
+    for (NodeID v = 0; v < g->n; v++)
+    {
+        g->Nd[v] = 0;
+        g->Na[v] = 0;   // buffer allocated lazily on first store
+        g->N[v] = NULL;
+        g->N_valid[v] = false;
     }
 
-    for (NodeID i = 0; i < g->m; i++)
-        qsort(g->E[i], g->Ed[i], sizeof(NodeID), hypergraph_compare);
+    g->nbr_scratch = new fast_set(g->n);
+    g->on_demand = true;
+    g->has_neighbors = true;
+}
 
-    for (NodeID i = 0; i < g->n; i++)
+// on-demand self-heal: (re)build the current neighborhood of u into g->N[u] from
+// incidence, exactly as hypergraph_build_neighbors does per vertex. Uses the
+// private nbr_scratch so the caller's node_set is never disturbed.
+static void hypergraph_on_demand_heal(hypergraph *g, NodeID u)
+{
+    g->Nd[u] = 0;
+    if (g->N[u] == NULL)
     {
-        NodeID d = 0;
-        for (NodeID j = 0; j < g->Vd[i]; j++)
-        {
-            if (j == 0 || g->V[i][j] > g->V[i][d - 1])
-                g->V[i][d++] = g->V[i][j];
-        }
-        g->Vd[i] = d;
+        g->Na[u] = MIN_ALLOC;
+        g->N[u] = (NodeID *)malloc(sizeof(NodeID) * g->Na[u]);
+    }
 
-        if (g->has_neighbors)
+    fast_set *fs = g->nbr_scratch;
+    fs->clear();
+    fs->add(u);
+    for (NodeID i = 0; i < g->Vd[u]; i++)
+    {
+        NodeID e = g->V[u][i];
+        for (NodeID j = 0; j < g->Ed[e]; j++)
         {
-            d = 0;
-            for (NodeID j = 0; j < g->Nd[i]; j++)
-            {
-                if (j == 0 || g->N[i][j] > g->N[i][d - 1])
-                    g->N[i][d++] = g->N[i][j];
-            }
-            g->Nd[i] = d;
+            NodeID v = g->E[e][j];
+            if (fs->add(v))
+                hypergraph_append_element(g->Nd + u, g->Na + u, g->N + u, v);
         }
     }
-    for (NodeID i = 0; i < g->m; i++)
-    {
-        NodeID d = 0;
-        for (NodeID j = 0; j < g->Ed[i]; j++)
-        {
-            if (j == 0 || g->E[i][j] > g->E[i][d - 1])
-                g->E[i][d++] = g->E[i][j];
-        }
-        g->Ed[i] = d;
-    }
+    std::sort(g->N[u], g->N[u] + g->Nd[u]);
+    g->N_valid[u] = true;
 }
 
 // type=0 g->V  type=1 g->E  type=2 g->N
@@ -328,9 +342,22 @@ void hypergraph_remove_set(NodeID *vec, NodeID &size, fast_set *set)
     size = remaining;
 }
 
+// Like hypergraph_remove_element but tolerates absence. In on-demand mode two
+// neighbor lists may have been built at different times, so u is not guaranteed
+// to be present in a neighbor's list; a blind remove_element would corrupt it.
+static inline void hypergraph_remove_element_if_present(NodeID *vec, NodeID &size, NodeID element)
+{
+    NodeID p = lower_bound(vec, size, element);
+    if (p < size && vec[p] == element)
+    {
+        memmove(vec + p, vec + p + 1, sizeof(NodeID) * (size - p - 1));
+        size--;
+    }
+}
+
 void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set *processed)
 {
-    if (g->has_neighbors)
+    if (g->has_neighbors && !g->on_demand)
     {
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
@@ -338,6 +365,39 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set *processed)
             hypergraph_remove_element(g->N[v], g->Nd[v], u);
         }
         hypergraph_reset(g, u, 2);
+    }
+    else if (g->on_demand)
+    {
+        // patch populated neighbor lists in place: drop u from every neighbor v
+        // whose entry is built. Enumerate u's neighbors from its own list if
+        // built, else from current incidence.
+        if (g->N_valid[u])
+        {
+            for (NodeID i = 0; i < g->Nd[u]; i++)
+            {
+                NodeID v = g->N[u][i];
+                if (g->N_valid[v])
+                    hypergraph_remove_element_if_present(g->N[v], g->Nd[v], u);
+            }
+        }
+        else
+        {
+            fast_set *fs = g->nbr_scratch;
+            fs->clear();
+            fs->add(u);
+            for (NodeID i = 0; i < g->Vd[u]; i++)
+            {
+                NodeID e = g->V[u][i];
+                for (NodeID j = 0; j < g->Ed[e]; j++)
+                {
+                    NodeID v = g->E[e][j];
+                    if (fs->add(v) && g->N_valid[v])
+                        hypergraph_remove_element_if_present(g->N[v], g->Nd[v], u);
+                }
+            }
+        }
+        g->Nd[u] = 0;
+        g->N_valid[u] = false;
     }
 
     for (NodeID i = 0; i < g->Vd[u]; i++)
@@ -354,17 +414,6 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set *processed)
 }
 
 void hypergraph_remove_size_one_edge(hypergraph *g, NodeID e)
-{
-    for (NodeID i = 0; i < g->Ed[e]; i++)
-    {
-        NodeID v = g->E[e][i];
-        hypergraph_remove_element(g->V[v], g->Vd[v], e);
-    }
-
-    hypergraph_reset(g, e, 1);
-}
-
-void hypergraph_remove_edge(hypergraph *g, NodeID e)
 {
     for (NodeID i = 0; i < g->Ed[e]; i++)
     {
@@ -406,6 +455,8 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
     nodes->add(u);
     processed->clear();
     processed->add(u);
+    if (g->on_demand)
+        g->N_valid[u] = false; // u is included and removed from the graph
 
     for (NodeID i = 0; i < g->Vd[u]; i++)
     {
@@ -416,12 +467,14 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         {
             NodeID v = g->E[e][j];
             nodes->add(v);
+            if (g->on_demand)
+                g->N_valid[v] = false; // neighbors of u are excluded and removed
         }
     }
 
     NodeID changed_size = 0;
     // collect remaining vertices in changed that see changes in their neighborhood
-    if (g->has_neighbors)
+    if (g->has_neighbors && !g->on_demand)
     {
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
@@ -431,6 +484,41 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
                 NodeID w = g->N[v][j];
                 if (processed->add(w) && !nodes->get(w))
                     changed[changed_size++] = w;
+            }
+        }
+    }
+    else if (g->on_demand)
+    {
+        // correct incidence-based 2-hop walk: for every neighbor v of u, collect
+        // v's neighbors (the 2-hop vertices) whose populated N lists must be
+        // stripped of the deleted vertices below. Neighbor-level dedup uses the
+        // private nbr_scratch; 2-hop-level dedup uses processed. Keeping these
+        // separate is essential: sharing one set lets a neighbor that appears as
+        // another neighbor's 2-hop suppress the exploration of its own 2-hop.
+        fast_set *v_seen = g->nbr_scratch;
+        v_seen->clear();
+        for (NodeID i = 0; i < g->Vd[u]; i++)
+        {
+            NodeID e = g->V[u][i];
+            for (NodeID j = 0; j < g->Ed[e]; j++)
+            {
+                NodeID v = g->E[e][j]; // u or a neighbor of u
+                if (!v_seen->add(v))
+                    continue;
+
+                for (NodeID k = 0; k < g->Vd[v]; k++)
+                {
+                    NodeID f = g->V[v][k]; // v's incident edges
+                    if (edges->get(f))     // skip u's own (deleted) edges
+                        continue;
+
+                    for (NodeID l = 0; l < g->Ed[f]; l++)
+                    {
+                        NodeID w = g->E[f][l];
+                        if (processed->add(w) && !nodes->get(w))
+                            changed[changed_size++] = w;
+                    }
+                }
             }
         }
     }
@@ -475,7 +563,8 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         for (NodeID i = 0; i < changed_size; i++)
         {
             NodeID v = changed[i];
-            hypergraph_remove_set(g->N[v], g->Nd[v], nodes);
+            if (!g->on_demand || g->N_valid[v])
+                hypergraph_remove_set(g->N[v], g->Nd[v], nodes);
         }
     }
 
@@ -506,24 +595,6 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
     }
     hypergraph_reset(g, u, 0);
     // assert(hypergraph_validate(g));
-}
-
-bool hypergraph_is_neighbor(hypergraph *g, NodeID u, NodeID neighbor)
-{
-    if (g->has_neighbors)
-    {
-        NodeID p = lower_bound(g->N[u], g->Nd[u], neighbor);
-        return p < g->Nd[u] && g->N[u][p] == neighbor;
-    }
-
-    for (NodeID i = 0; i < g->Vd[u]; i++)
-    {
-        NodeID e = g->V[u][i];
-        NodeID p = lower_bound(g->E[e], g->Ed[e], neighbor);
-        if (p < g->Ed[e] && g->E[e][p] == neighbor)
-            return true;
-    }
-    return false;
 }
 
 hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, int *reduced)
@@ -569,7 +640,10 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     }
     assert(e <= red_m);
 
-    if (g->has_neighbors)
+    // In on-demand mode g->N is only partially populated; the reduced graph does
+    // not need a neighbor array (the ILP solver / output use incidence), so skip
+    // rebuilding it and leave rg->has_neighbors = 0.
+    if (g->has_neighbors && !g->on_demand)
     {
 
         rg->Nd = (NodeID *)malloc(sizeof(NodeID) * g->n);
@@ -714,9 +788,15 @@ void hypergraph_free(hypergraph *g)
         free(g->Nd);
         free(g->Na);
         for (NodeID i = 0; i < g->n; i++)
-            free(g->N[i]);
+            free(g->N[i]); // NULL-safe: on-demand entries never built stay NULL
 
         free(g->N);
+
+        if (g->on_demand)
+        {
+            free(g->N_valid);
+            delete g->nbr_scratch;
+        }
     }
 
 

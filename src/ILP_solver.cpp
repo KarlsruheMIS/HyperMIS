@@ -7,9 +7,14 @@
 std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution)
 {
     // idea: check degree 1 nodes that are in the MIS for the heuristic, and fix them in ILP
-    if (g->n == 0)
+    if (g->n == 0 )
     {
-        return {0, 0.0};
+        return {0, 2};
+    }
+    std::chrono::duration<double> time_passed = std::chrono::high_resolution_clock::now() - start_time;
+    if (time_limit_seconds - time_passed.count() <= 0)
+    {
+        return {0, 0};
     }
     try
     {
@@ -59,7 +64,7 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
 
         // MIPGap
         model.set(GRB_DoubleParam_MIPGap, 0.0);
-        std::chrono::duration<double> time_passed = std::chrono::high_resolution_clock::now() - start_time;
+        time_passed = std::chrono::high_resolution_clock::now() - start_time;
         // timelimit
         model.set(GRB_DoubleParam_TimeLimit, time_limit_seconds - time_passed.count());
 

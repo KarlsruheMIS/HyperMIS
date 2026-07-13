@@ -10,7 +10,3 @@ typedef struct
     long long *V;
     NodeID *E;
 } graph;
-
-graph *graph_parse(FILE *f);
-
-void graph_free(graph *g);

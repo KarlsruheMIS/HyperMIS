@@ -14,6 +14,12 @@ typedef struct
     NodeID *Vd, *Va, *Ed, *Ea, *Nd, *Na;
     NodeID **V, **E, **N;
     bool has_neighbors;
+    // on-demand neighborhood cache (see hypergraph_init_on_demand): has_neighbors
+    // is set, but only entries with N_valid[v] are populated; the rest are built
+    // lazily on first request. nbr_scratch is a private dedup set for self-heal.
+    bool on_demand;
+    bool *N_valid;
+    fast_set *nbr_scratch;
 } hypergraph;
 
 hypergraph *hypergraph_parse(FILE *f);
@@ -25,6 +31,12 @@ NodeID *hypergraph_get_neighborhood_and_set(hypergraph *g, NodeID u, NodeID *nei
 
 void hypergraph_build_neighbors(hypergraph *g, fast_set *fs);
 
+// on-demand mode: allocate the neighbor array structure but populate each N[v]
+// lazily, the first time a reduction requests it (see the getters). Owns a
+// private fast_set used only for deduplication during self-heal, so healing
+// never disturbs a caller's node_set.
+void hypergraph_init_on_demand(hypergraph *g);
+
 // Modify
 
 void hypergraph_remove_element(NodeID *vec, NodeID &size, NodeID element);
@@ -33,21 +45,14 @@ void hypergraph_reset(hypergraph *g, NodeID element, int type);
 
 void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set* processed);
 
-void hypergraph_remove_edge(hypergraph *g, NodeID e);
 void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *edges, fast_set *nodes);
 void hypergraph_remove_size_one_edge(hypergraph *g, NodeID e);
 void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fast_set *processed, fast_set *edges, NodeID *changed);
 
 // Utility
 
-void hypergraph_sort(hypergraph *g);
-
 graph *hypergraph_clique_expansion(hypergraph *hg);
 
 bool hypergraph_validate(hypergraph *g);
 
-bool hypergraph_is_neighbor(hypergraph *g, NodeID v, NodeID neighbor);
-
 hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, int *status);
-
-hypergraph *hypergraph_copy(hypergraph *g);

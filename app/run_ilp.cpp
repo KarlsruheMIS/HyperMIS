@@ -26,7 +26,9 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
                    "-e \t\tClique expand hypergraph to graph before ILP run.\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
-                   "-f \t\tStore neighborhood array only when needed\n"
+                   "-d \t\tOn-demand: store a vertex's neighborhood only once a reduction requests it, and patch it in place afterwards\n"
+                   "-M n \t\tMax vertex degree considered by the reductions \t\t\t default 100\n"
+                   "-N n \t\tMax neighborhood size considered by the reductions \t\t default 200\n"
                    "\n* Mandatory input";
 
 int main(int argc, char **argv)
@@ -40,7 +42,7 @@ int main(int argc, char **argv)
     int command;
     std::string name;
 
-    while ((command = getopt(argc, argv, "hnvefg:t:s:k:o:r:")) != -1)
+    while ((command = getopt(argc, argv, "hdnveg:t:s:k:o:r:M:N:")) != -1)
     {
         switch (command)
         {
@@ -48,11 +50,11 @@ int main(int argc, char **argv)
             printf("%s\n", help);
             return 0;
         case 'n':
-            if (!BUILD_ON_THE_FLY_NEIGHBORHOOD)
+            if (!ON_DEMAND_NEIGHBORHOOD)
                 USE_NEIGHBORHOOD_ARRAY = 1;
             break;
-        case 'f':
-            BUILD_ON_THE_FLY_NEIGHBORHOOD = 1;
+        case 'd':
+            ON_DEMAND_NEIGHBORHOOD = 1;
             USE_NEIGHBORHOOD_ARRAY = 0;
             break;
         case 'v':
@@ -67,6 +69,8 @@ int main(int argc, char **argv)
             break;
         case 't':
             timeout = atof(optarg);
+            if (TIME_KERNEL_SECONDS > timeout)
+                TIME_KERNEL_SECONDS = timeout;
             break;
         case 's':
             seed = atoi(optarg);
@@ -82,6 +86,12 @@ int main(int argc, char **argv)
             break;
         case 'e':
             run_on_graph = 1;
+            break;
+        case 'M':
+            MAX_DEGREE = atoi(optarg);
+            break;
+        case 'N':
+            NEIGHBORS_SIZE = atoi(optarg);
             break;
         case '?':
             return 1;
@@ -107,7 +117,15 @@ int main(int argc, char **argv)
     fclose(hgr_file);
 
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
-    hypergraph_build_neighbors(g, &mis_alg->node_set);
+    // Mirror run_reduce: only -n builds the full array up front; -d sets up the
+    // on-demand cache; -f builds the full array lazily in the reduce driver;
+    // default computes neighborhoods on the fly. This makes -d, -f, -n and the
+    // default mode all behave distinctly (previously the array was built
+    // unconditionally here, so -f/-n/default were identical in run_ilp).
+    if (USE_NEIGHBORHOOD_ARRAY)
+        hypergraph_build_neighbors(g, &mis_alg->node_set);
+    else if (ON_DEMAND_NEIGHBORHOOD)
+        hypergraph_init_on_demand(g);
     // assert(hypergraph_validate(g));
     std::vector<bool> sol(g->n, false);
     std::pair<NodeID, int> ILP_solution;
