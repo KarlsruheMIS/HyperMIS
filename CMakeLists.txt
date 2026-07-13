@@ -23,7 +23,6 @@ set(LIBFILES
     src/reductions.cpp
     src/config.cpp
     src/hypergraph.cpp
-    src/graph.cpp
 )
 add_library(libfiles OBJECT ${LIBFILES})
 
