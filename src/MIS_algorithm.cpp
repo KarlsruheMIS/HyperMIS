@@ -15,10 +15,10 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         status.reductions = make_reduction_vector<edge_degree_one_reduction, sunflower_reduction>(status.n, status.m);
         break;
     case 3:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_domination_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, edge_domination_reduction>(status.n, status.m);
         break;
     case 4:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, edge_domination_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_domination_reduction>(status.n, status.m);
         break;
     case 5:
         status.reductions = make_reduction_vector<edge_degree_one_reduction, twin_reduction>(status.n, status.m);
