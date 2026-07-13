@@ -20,8 +20,8 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-e \t\tExperiment mode, output reduction statistics to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
-                   "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
-                   "-k sec \t\tTimout in seconds for reduction preprocessing \t\t\t\t default 3600 seconds\n"
+                   "-t sec \t\tTimout in seconds for reduction preprocessing (alias for -k) \t default 100 seconds\n"
+                   "-k sec \t\tTimout in seconds for reduction preprocessing \t\t\t default 100 seconds\n"
                    "-s \tUser specific seed\n"
                    "-o path \tPath to the solution\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
@@ -32,7 +32,6 @@ int main(int argc, char **argv)
 {
     char *hypergraph_path = NULL,
          *solution_path = NULL;
-    double timeout = 3600;
 
     unsigned int seed = time(NULL);
 
@@ -69,12 +68,10 @@ int main(int argc, char **argv)
         case 'o':
             solution_path = optarg;
             break;
-        case 't':
-            timeout = atof(optarg);
-            break;
         case 's':
             seed = atoi(optarg);
             break;
+        case 't':
         case 'k':
             TIME_KERNEL_SECONDS = atoi(optarg);
             break;
@@ -134,10 +131,16 @@ int main(int argc, char **argv)
     std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
 
     double avg_e_size = 0.0;
-    for (NodeID e = 0; e < rg->m; e++)
-        avg_e_size += rg->Ed[e];
-    avg_e_size = avg_e_size / (rg->m);
-
+    if (rg->m == 0)
+    {
+        avg_e_size = 0;
+    }
+    else
+    {
+        for (NodeID e = 0; e < rg->m; e++)
+            avg_e_size += rg->Ed[e];
+        avg_e_size = avg_e_size / (rg->m);
+    }
 
     if (EXPERIMENT)
     {

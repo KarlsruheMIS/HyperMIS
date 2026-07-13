@@ -236,7 +236,7 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
       extend_neighborhood_S.add(next_node);
       neighborhood_S[neighborhood_S_size++] = next_node;
 
-      if (g->Nd)
+      if (g->has_neighbors)
       {
         for (NodeID i = 0; i < g->Nd[next_node]; i++)
         {
@@ -253,7 +253,7 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
           for (NodeID j = 0; j < g->Ed[e]; j++)
           {
             NodeID neighbor = g->E[e][j];
-            if (g->Vd[neighbor] > NEIGHBORS_SIZE)
+            if (g->Vd[neighbor] > MAX_DEGREE)
               continue;
 
             if (extend_neighborhood_S.add(neighbor))
@@ -303,10 +303,12 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
 
     if (old_n - status.remaining_nodes > 10)
     {
+      // we return early, so carry the unscanned tail of our own marker over to
+      // the next round; the other reductions' markers must not be touched
       for (size_t remaining_idx = v_idx + 1; remaining_idx < marker.current_size(); remaining_idx++)
       {
         NodeID v_remaining = marker.current_element(remaining_idx);
-        mish_alg->add_next_level_node(v_remaining);
+        marker.add(v_remaining);
       }
       return true;
     }
@@ -583,10 +585,12 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
       for (NodeID twin : twins)
         mish_alg->set(twin, IS_status::included);
 
+      // we return early, so carry the unscanned tail of our own marker over to
+      // the next round; the other reductions' markers must not be touched
       for (size_t remaining_idx = v_idx + 1; remaining_idx < marker.current_size(); remaining_idx++)
       {
         NodeID v_remaining = marker.current_element(remaining_idx);
-        mish_alg->add_next_level_node(v_remaining);
+        marker.add(v_remaining);
       }
       return true;
     }

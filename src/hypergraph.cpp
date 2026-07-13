@@ -90,6 +90,7 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     g->Ed = (NodeID *)malloc(sizeof(NodeID) * m);
     g->Ea = (NodeID *)malloc(sizeof(NodeID) * m);
 
+    g->Nd = NULL;
     g->Na = NULL;
     g->N = NULL;
 
@@ -581,7 +582,7 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
 
             rg->Nd[u_new] = 0;
             rg->Na[u_new] = MIN_ALLOC;
-            rg->N[u_new] = (NodeID *)malloc(sizeof(NodeID) * g->Na[u_new]);
+            rg->N[u_new] = (NodeID *)malloc(sizeof(NodeID) * rg->Na[u_new]);
 
             NodeID u = remap[u_new];
             for (NodeID j = 0; j < g->Nd[u]; j++)
