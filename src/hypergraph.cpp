@@ -441,9 +441,11 @@ void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *
             if (nodes->add(v))
                 hypergraph_remove_set(g->V[v], g->Vd[v], edges);
         }
-
-        hypergraph_reset(g, e, 1);
     }
+
+    // deferred to here: the loop above reads E[e] and Ed[e] of every removed edge
+    for (NodeID i = 0; i < e_size; i++)
+        hypergraph_reset(g, E[i], 1);
 }
 
 // remove edges and vertices (include u operation)
@@ -472,29 +474,23 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         }
     }
 
+    // changed[] collects the surviving 2-hop vertices
     NodeID changed_size = 0;
-    // collect remaining vertices in changed that see changes in their neighborhood
     if (g->has_neighbors && !g->on_demand)
     {
         for (NodeID i = 0; i < g->Nd[u]; i++)
         {
-            NodeID v = g->N[u][i];
-            for (NodeID j = 0; j < g->Nd[v]; j++)
+            NodeID d = g->N[u][i]; // excluded, hence removed from the graph
+            for (NodeID j = 0; j < g->Nd[d]; j++)
             {
-                NodeID w = g->N[v][j];
-                if (processed->add(w) && !nodes->get(w))
-                    changed[changed_size++] = w;
+                NodeID w = g->N[d][j];
+                if (!nodes->get(w))
+                    hypergraph_remove_element_if_present(g->N[w], g->Nd[w], d);
             }
         }
     }
     else if (g->on_demand)
     {
-        // correct incidence-based 2-hop walk: for every neighbor v of u, collect
-        // v's neighbors (the 2-hop vertices) whose populated N lists must be
-        // stripped of the deleted vertices below. Neighbor-level dedup uses the
-        // private nbr_scratch; 2-hop-level dedup uses processed. Keeping these
-        // separate is essential: sharing one set lets a neighbor that appears as
-        // another neighbor's 2-hop suppress the exploration of its own 2-hop.
         fast_set *v_seen = g->nbr_scratch;
         v_seen->clear();
         for (NodeID i = 0; i < g->Vd[u]; i++)
@@ -522,50 +518,15 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
             }
         }
     }
-    else
-    {
-        for (NodeID i = 0; i < g->Vd[u]; i++)
-        {
-            NodeID e = g->V[u][i];
-            for (NodeID j = 0; j < g->Ed[e]; j++)
-            {
-                // v will be excluded, neighbors are subject to change
-                NodeID v = g->E[e][j];
 
-                if (!processed->add(v))
-                    continue;
-
-                for (NodeID k = 0; k < g->Vd[v]; k++)
-                {
-                    NodeID f = g->V[u][i];
-                    if (edges->get(f))
-                        continue;
-
-                    for (NodeID l = 0; l < g->Ed[f]; l++)
-                    {
-                        NodeID w = g->E[f][l];
-                        if (processed->add(w) && !nodes->get(w))
-                            changed[changed_size++] = w;
-                    }
-                }
-            }
-        }
-    }
-
+    // on-demand only: a deleted vertex's own list may never have been built, so the
+    // walk above cannot start from it -- the survivors are collected by incidence
+    // instead, and each one's (populated) list is stripped in one pass.
     for (NodeID i = 0; i < changed_size; i++)
     {
         NodeID v = changed[i];
-        hypergraph_remove_set(g->V[v], g->Vd[v], edges);
-    }
-
-    if (g->has_neighbors)
-    {
-        for (NodeID i = 0; i < changed_size; i++)
-        {
-            NodeID v = changed[i];
-            if (!g->on_demand || g->N_valid[v])
-                hypergraph_remove_set(g->N[v], g->Nd[v], nodes);
-        }
+        if (g->N_valid[v])
+            hypergraph_remove_set(g->N[v], g->Nd[v], nodes);
     }
 
     processed->clear();
