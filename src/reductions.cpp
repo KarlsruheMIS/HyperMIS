@@ -90,44 +90,6 @@ static inline int set_is_subset_except_one(const NodeID *A, NodeID a, const Node
   return i == a;
 }
 
-// Test if A \ B = \emtpyset (return -1) if A\B = {v} (return v) else return -2
-static inline int set_difference_check(const NodeID *A, NodeID a, const NodeID *B, NodeID b)
-{
-  if (a > b + 1)
-    return -2;
-
-  int difference = 0;
-
-  NodeID differenceNode;
-  NodeID i = 0, j = 0;
-  while (i < a && j < b && difference < 2)
-  {
-    if (A[i] == B[j])
-    {
-      i++;
-      j++;
-    }
-    else if (A[i] > B[j])
-    {
-      j++;
-    }
-    else if (A[i] < B[j])
-    {
-      differenceNode = A[i];
-      difference++;
-      i++;
-    }
-  }
-
-  if (difference == 0 && i == a)
-    return -1;
-
-  if (difference == 1 && i == a)
-    return differenceNode;
-
-  return -2;
-}
-
 // Test if |A \cap B| == 1
 static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b)
 {
@@ -210,8 +172,6 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
   auto &neighbors = mish_alg->node_vec;
   auto &neighborhood_S = mish_alg->node_vec2;
   auto &extend_neighborhood_S = mish_alg->node_set;
-  int num_iterations = 0;
-  NodeID *S = mish_alg->edge_vec;
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
@@ -219,106 +179,197 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
     if (elapsed > TIME_KERNEL_SECONDS)
       break;
 
-    if (num_iterations >= ITERATIONS_UNCONFINED)
-      break;
-
     NodeID v = marker.current_element(v_idx);
 
     if (status.node_status[v] != IS_status::not_set)
       continue;
 
-    bool v_confined = false;
-    NodeID S_size = 0;
+    bool v_unconfined = false;
     NodeID neighborhood_S_size = 0;
+    NodeID S_size = 0; // |S|, only needed to gate the diamond extension below
     extend_neighborhood_S.clear();
 
-    NodeID next_node = v;
-    while (!v_confined && S_size <= CONSTANT_UNCONFINED)
+    auto add_to_S = [&](NodeID s)
     {
-      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
-      if (elapsed > TIME_KERNEL_SECONDS)
-        break;
+      S_size++;
+      extend_neighborhood_S.add(s);
+      neighborhood_S[neighborhood_S_size++] = s;
 
-      S[S_size++] = next_node;
-      extend_neighborhood_S.add(next_node);
-      neighborhood_S[neighborhood_S_size++] = next_node;
-
-      if (nbrs_ready(g, next_node))
+      if (nbrs_ready(g, s))
       {
-        for (NodeID i = 0; i < g->Nd[next_node]; i++)
+        for (NodeID i = 0; i < g->Nd[s]; i++)
         {
-          NodeID neighbor = g->N[next_node][i];
+          NodeID neighbor = g->N[s][i];
+          if (g->Vd[neighbor] > MAX_DEGREE)
+            continue;
+          intersection_count[neighbor]++;
           if (extend_neighborhood_S.add(neighbor))
             neighborhood_S[neighborhood_S_size++] = neighbor;
         }
       }
       else
       {
-        for (NodeID i = 0; i < g->Vd[next_node]; i++)
+        mish_alg->node_set2.clear();
+        for (NodeID i = 0; i < g->Vd[s]; i++)
         {
-          NodeID e = g->V[next_node][i];
+          NodeID e = g->V[s][i];
           for (NodeID j = 0; j < g->Ed[e]; j++)
           {
             NodeID neighbor = g->E[e][j];
+            if (neighbor == s)
+              continue;
             if (g->Vd[neighbor] > MAX_DEGREE)
               continue;
+            if (!mish_alg->node_set2.add(neighbor))
+              continue;
 
+            intersection_count[neighbor]++;
             if (extend_neighborhood_S.add(neighbor))
               neighborhood_S[neighborhood_S_size++] = neighbor;
           }
         }
       }
+    };
 
-      std::sort(neighborhood_S, neighborhood_S + neighborhood_S_size);
-      std::sort(S, S + S_size);
+    add_to_S(v);
 
-      bool v_unconfined = false;
-      bool u_is_child_of_S = false;
-
-      NodeID u;
-      NodeID Nd;
-      NodeID *n;
-      for (NodeID i = 0; i < neighborhood_S_size && !u_is_child_of_S; i++)
-      {
-        u = neighborhood_S[i];
-        n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set);
-        u_is_child_of_S = set_intersection_equal_one(n, Nd, S, S_size);
-      }
-
-      if (!u_is_child_of_S)
-      {
-        v_confined = true;
-      }
-      else
-      {
-        int unconfined_condition_check = set_difference_check(n, Nd, neighborhood_S, neighborhood_S_size);
-
-        if (unconfined_condition_check == -1)
-          v_unconfined = true;
-        else if (unconfined_condition_check < -1)
-          v_confined = true;
-        else
-          next_node = unconfined_condition_check;
-      }
-      if (v_unconfined)
-      {
-        mish_alg->set(v, IS_status::excluded);
-        break;
-      }
-    }
-    num_iterations++;
-
-    if (old_n - status.remaining_nodes > 10)
+    // Grow S until no child extends it. Each pass scans the children of S
+    // (|N(u) cap S| == 1); a child with two or more vertices outside N[S] neither
+    // excludes v nor extends S, but a later child still can, so skip it and keep
+    // scanning.
+    bool ok = false;
+    while (!ok && !v_unconfined)
     {
-      // we return early, so carry the unscanned tail of our own marker over to
-      // the next round; the other reductions' markers must not be touched
-      for (size_t remaining_idx = v_idx + 1; remaining_idx < marker.current_size(); remaining_idx++)
+      auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
+      if (elapsed > TIME_KERNEL_SECONDS)
+        break;
+
+      ok = true;
+      for (NodeID i = 0; i < neighborhood_S_size; i++)
       {
-        NodeID v_remaining = marker.current_element(remaining_idx);
-        marker.add(v_remaining);
+        NodeID u = neighborhood_S[i];
+
+        if (intersection_count[u] != 1) // not a child of S
+          continue;
+
+        NodeID Nd;
+        NodeID *n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set2);
+
+        // |N(u) \ N[S]|, capped at 2 -- we only ever distinguish 0, 1 and "many".
+        // |N(u)\N[S]| >= |N(u)| - |N[S]|, so a child with Nd > |N[S]|+1 cannot have a difference below 2 and needs no scan.
+        bool many = (Nd > neighborhood_S_size + 1);
+        bool found = false;
+        NodeID z = 0;
+        if (!many)
+        {
+          for (NodeID k = 0; k < Nd; k++)
+          {
+            NodeID w = n[k];
+            if (extend_neighborhood_S.get(w)) // w is in N[S]
+              continue;
+            if (found)
+            {
+              many = true;
+              break;
+            }
+            z = w;
+            found = true;
+          }
+        }
+
+        if (many)
+          continue; // two or more vertices outside N[S] -> useless child, try the next
+        if (!found)
+        {
+          v_unconfined = true; 
+          break;
+        }
+
+        // Exactly one vertex outside N[S] -> extend S with it and keep scanning.
+        ok = false;
+        add_to_S(z);
       }
-      return true;
     }
+
+    // Diamond/satellite extension:
+    // Two vertices u_i, u_j that are NOT adjacent, each having exactly the same two
+    // S-neighbours and no neighbour outside N[S], form a diamond that forces v out of
+    // every maximum independent set.
+    if (!v_unconfined && S_size >= 2)
+    {
+      ns_set.clear();
+      for (NodeID i = 0; i < neighborhood_S_size; i++)
+      {
+        NodeID u = neighborhood_S[i];
+        if (intersection_count[u] >= 1) 
+          ns_set.add(u);
+      }
+
+      for (NodeID i = 0; i < neighborhood_S_size; i++)
+      {
+        vs1[i] = vs2[i] = VS_NONE;
+        NodeID u = neighborhood_S[i];
+        if (intersection_count[u] != 2)
+          continue;
+
+        NodeID Nd;
+        NodeID *n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set2);
+
+        NodeID a = VS_NONE, b = VS_NONE;
+        bool too_many = false;
+        for (NodeID k = 0; k < Nd; k++)
+        {
+          NodeID w = n[k];
+          if (ns_set.get(w))
+            continue;
+          if (a == VS_NONE)
+            a = w;
+          else if (b == VS_NONE)
+            b = w;
+          else
+          {
+            too_many = true;
+            break;
+          }
+        }
+        if (too_many || a == VS_NONE || b == VS_NONE)
+          continue;
+
+        if (a > b)
+          std::swap(a, b);
+        vs1[i] = a;
+        vs2[i] = b;
+      }
+
+      for (NodeID i = 0; i < neighborhood_S_size && !v_unconfined; i++)
+      {
+        if (vs1[i] == VS_NONE)
+          continue;
+
+        NodeID u = neighborhood_S[i];
+        NodeID Nd;
+        NodeID *n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set2);
+        nu_set.clear();
+        for (NodeID k = 0; k < Nd; k++)
+          nu_set.add(n[k]);
+
+        for (NodeID j = i + 1; j < neighborhood_S_size; j++)
+        {
+          if (vs1[j] != vs1[i] || vs2[j] != vs2[i])
+            continue;
+          if (nu_set.get(neighborhood_S[j])) // u_i and u_j adjacent -> no diamond
+            continue;
+          v_unconfined = true;
+          break;
+        }
+      }
+    }
+
+    if (v_unconfined)
+      mish_alg->set(v, IS_status::excluded);
+
+    for (NodeID i = 0; i < neighborhood_S_size; i++)
+      intersection_count[neighborhood_S[i]] = 0;
   }
 
   return old_n != status.remaining_nodes;
@@ -384,8 +435,7 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
   NodeID old_n = status.remaining_nodes;
   hypergraph *g = status.hgraph;
 
-  // node_domination is the workhorse that most benefits from a wider reach, so
-  // it scales the degree / neighborhood-size bounds by NODE_DOM_FACTOR.
+  // scale node_domination with the degree / neighborhood-size bounds by NODE_DOM_FACTOR
   const NodeID dom_max_degree = MAX_DEGREE * NODE_DOM_FACTOR;
   const NodeID dom_neighbors_size = NEIGHBORS_SIZE * NODE_DOM_FACTOR;
 
@@ -418,9 +468,6 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
     for (NodeID i = 0; i < deg_v; i++)
     {
       NodeID u = n[i];
-      // n may hold an already-decided vertex left stale in the cache. Drop it
-      // from the live neighborhood (so it is never seen again) and re-examine
-      // this slot. On the on-the-fly path n is a private buffer, so leave it.
       if (status.node_status[u] != IS_status::not_set)
       {
         if (g->has_neighbors)
@@ -446,12 +493,12 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
         mish_alg->set(u, IS_status::excluded);
 
         if (status.hgraph->has_neighbors)
-        { // n is the live g->N[v] (-f or on-demand); it shrank when u was removed
+        { // n is the live g->N[v] (-f) -> it shrinks when u is removed
           i--;
           deg_v--;
         }
         else
-        { // n is a private on-the-fly buffer: it does not shrink
+        { // n is a buffer -> it does not shrink
           dominated++;
         }
 
@@ -545,6 +592,10 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
 
   for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
   {
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
+    if (elapsed > TIME_KERNEL_SECONDS)
+      break;
+
     NodeID v = marker.current_element(v_idx);
 
     if (status.node_status[v] != IS_status::not_set)
@@ -554,9 +605,9 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
     if (deg_v > MAX_DEGREE)
       continue;
 
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();
-    if (elapsed > TIME_KERNEL_SECONDS)
-      break;
+    // (The time check lives at the top of the loop now. It used to sit here and break
+    // without carrying the unscanned tail over, silently retiring those vertices --
+    // the same bug that cost unconfined most of its reduction.)
 
     NodeID dv;
     NodeID *nv = hypergraph_get_neighborhood_and_set(g, v, neighbors, dv, node_v);
@@ -642,14 +693,11 @@ bool twin_reduction::reduce(MISH_algorithm *mish_alg)
       for (NodeID twin : twins)
         mish_alg->set(twin, IS_status::included);
 
-      // we return early, so carry the unscanned tail of our own marker over to
-      // the next round; the other reductions' markers must not be touched
-      for (size_t remaining_idx = v_idx + 1; remaining_idx < marker.current_size(); remaining_idx++)
-      {
-        NodeID v_remaining = marker.current_element(remaining_idx);
-        marker.add(v_remaining);
-      }
-      return true;
+      // No early return: this used to bail out after the FIRST successful reduction and
+      // hand back to the driver, which cycled all 7 rules before twin got back in --
+      // and each re-entry restarts the scan at the front of the marker. Scanning the
+      // whole marker in one go instead, like KaMIS's rules do; the time check at the
+      // top of the loop bounds the work and carries its tail over.
     }
   }
   return old_n != status.remaining_nodes;

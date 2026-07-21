@@ -4,10 +4,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 # set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-set(GUROBI_HOME /opt/gurobi1203/linux64)
-set(GRB_LICENSE_FILE /opt/gurobi1203/gurobi.lic)
+set(GUROBI_HOME /home/ernestineg/gurobi/gurobi1203/linux64)
+set(GRB_LICENSE_FILE /home/ernestineg/)
 include_directories(${GUROBI_HOME}/include)
 link_directories(${GUROBI_HOME}/lib)
 
@@ -36,3 +37,11 @@ target_link_libraries(hypergraph_to_graph libfiles)
 target_link_libraries(run_ilp libfiles gurobi_c++ gurobi120)
 
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_HOME}/lib")
+
+add_executable(graph_reduction_comparison
+    graph_comparison/graph_reduction_comparison.cpp
+    graph_comparison/graph_reductions.cpp
+    src/ILP_solver.cpp)
+target_include_directories(graph_reduction_comparison PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/graph_comparison)
+target_link_libraries(graph_reduction_comparison libfiles gurobi_c++ gurobi120)

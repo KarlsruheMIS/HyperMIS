@@ -13,7 +13,6 @@
 
 typedef MISH_algorithm::IS_status IS_status;
 
-//new hypergraph data structures for LP
 using HyperedgeLP = std::set<int>;
 using HyperedgeVectorLP = std::vector<HyperedgeLP>;
 
@@ -29,6 +28,8 @@ struct HypergraphLP {
     HypergraphLP(HyperedgeVectorLP& hes, size_t num_he, size_t num_hn) : hyperedges(hes), num_hyperedges(num_he), num_hypernodes(num_hn) {}
 
 };
+
+constexpr int ILP_FAILED = -1;
 
 std::pair<NodeID, int> ILP_solver(hypergraph *hgr, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool>& solution);
 std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution);

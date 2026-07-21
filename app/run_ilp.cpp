@@ -117,11 +117,6 @@ int main(int argc, char **argv)
     fclose(hgr_file);
 
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
-    // Mirror run_reduce: only -n builds the full array up front; -d sets up the
-    // on-demand cache; -f builds the full array lazily in the reduce driver;
-    // default computes neighborhoods on the fly. This makes -d, -f, -n and the
-    // default mode all behave distinctly (previously the array was built
-    // unconditionally here, so -f/-n/default were identical in run_ilp).
     if (USE_NEIGHBORHOOD_ARRAY)
         hypergraph_build_neighbors(g, &mis_alg->node_set);
     else if (ON_DEMAND_NEIGHBORHOOD)
@@ -143,12 +138,22 @@ int main(int argc, char **argv)
             if (run_on_graph)
             {
                 graph *expanded_rg = hypergraph_clique_expansion(rg);
+                if (expanded_rg == NULL)
+                {
+                    std::cerr << "Error: could not build the clique expansion of " << name << std::endl;
+                    return 1;
+                }
                 ILP_solution = ILP_solver_graphs(expanded_rg, timeout, mis_alg->start_time, red_sol);
                 free(expanded_rg);
             }
             else
             {
                 ILP_solution = ILP_solver(rg, timeout, mis_alg->start_time, red_sol);
+            }
+            if (ILP_solution.second == ILP_FAILED)
+            {
+                std::cerr << "Error: the ILP failed on " << name << "; no result reported" << std::endl;
+                return 1;
             }
             std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
             size += ILP_solution.first;
@@ -181,12 +186,22 @@ int main(int argc, char **argv)
         if (run_on_graph)
         {
             graph *expanded_g = hypergraph_clique_expansion(g);
+            if (expanded_g == NULL)
+            {
+                std::cerr << "Error: could not build the clique expansion of " << name << std::endl;
+                return 1;
+            }
             ILP_solution = ILP_solver_graphs(expanded_g, timeout, mis_alg->start_time, sol);
             free(expanded_g);
         }
         else
         {
             ILP_solution = ILP_solver(g, timeout, mis_alg->start_time, sol);
+        }
+        if (ILP_solution.second == ILP_FAILED)
+        {
+            std::cerr << "Error: the ILP failed on " << name << "; no result reported" << std::endl;
+            return 1;
         }
         std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
         std::cout << name << "\tILP\t" << ILP_solution.first << "\t" << time.count() << "\t" << (ILP_solution.second == 2) << "\t" << seed << std::endl;
