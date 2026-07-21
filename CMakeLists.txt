@@ -4,12 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
-# -DNDEBUG compiles out assert() — notably the two full-graph
-# assert(hypergraph_validate(...)) calls in run_reduce, which otherwise cost
-# ~5% of the reduction time. Drop it (or build Debug) when debugging.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-# Link-time optimization: lets the hot cross-TU calls (e.g. hypergraph_get_neighborhood,
-# called tens of millions of times) inline into the reduction rules.
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 set(GUROBI_HOME /home/ernestineg/gurobi/gurobi1203/linux64)
@@ -42,3 +37,11 @@ target_link_libraries(hypergraph_to_graph libfiles)
 target_link_libraries(run_ilp libfiles gurobi_c++ gurobi120)
 
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_HOME}/lib")
+
+add_executable(graph_reduction_comparison
+    graph_comparison/graph_reduction_comparison.cpp
+    graph_comparison/graph_reductions.cpp
+    src/ILP_solver.cpp)
+target_include_directories(graph_reduction_comparison PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/graph_comparison)
+target_link_libraries(graph_reduction_comparison libfiles gurobi_c++ gurobi120)

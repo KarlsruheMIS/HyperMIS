@@ -131,10 +131,8 @@ int main(int argc, char **argv)
         if (mis_alg->status.node_status[v] == MISH_algorithm::IS_status::not_set)
             reduced[v] = 0;
     }
-    std::vector<NodeID> map;
-    std::vector<NodeID> remap;
-    remap.reserve(mis_alg->status.remaining_nodes);
-    map.reserve(mis_alg->status.n);
+    std::vector<NodeID> map(mis_alg->status.n, 0);
+    std::vector<NodeID> remap(mis_alg->status.remaining_nodes, 0);
 
     hypergraph *rg = hypergraph_build_reduced(g, map.data(), remap.data(), reduced.data());
     assert(hypergraph_validate(rg));

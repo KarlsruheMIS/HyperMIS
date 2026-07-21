@@ -70,30 +70,33 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
 
         model.optimize();
 
+        int optimstatus = model.get(GRB_IntAttr_Status);
+
         NodeID res = 0;
 
-        for (NodeID i = 0; i < g->n; ++i)
+        if (model.get(GRB_IntAttr_SolCount) > 0)
         {
-            if (x[i].get(GRB_DoubleAttr_X) > 0.5)
+            for (NodeID i = 0; i < g->n; ++i)
             {
-                solution[i] = 1;
-                res++;
+                if (x[i].get(GRB_DoubleAttr_X) > 0.5)
+                {
+                    solution[i] = 1;
+                    res++;
+                }
             }
         }
 
-        int optimstatus = model.get(GRB_IntAttr_Status);
-
         return {res, optimstatus};
     }
-        catch (GRBException& e)
-        {
+    catch (GRBException &e)
+    {
         std::cerr << "Gurobi Exception: " << e.getMessage() << std::endl;
     }
     catch (...)
     {
         std::cerr << "Unknown error while solving the ILP occured." << std::endl;
     }
-    return {-1, -1.0};
+    return {0, ILP_FAILED};
 }
 
 std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution)
@@ -147,18 +150,22 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
 
         model.optimize();
 
+        int optimstatus = model.get(GRB_IntAttr_Status);
+
         NodeID res = 0;
 
-        for (NodeID i = 0; i < g->n; ++i)
+        // See ILP_solver: no incumbent means GRB_DoubleAttr_X is unreadable.
+        if (model.get(GRB_IntAttr_SolCount) > 0)
         {
-            if (x[i].get(GRB_DoubleAttr_X) > 0.5)
+            for (NodeID i = 0; i < g->n; ++i)
             {
-                solution[i] = 1;
-                res++;
+                if (x[i].get(GRB_DoubleAttr_X) > 0.5)
+                {
+                    solution[i] = 1;
+                    res++;
+                }
             }
         }
-
-        int optimstatus = model.get(GRB_IntAttr_Status);
 
         return {res, optimstatus};
     }
@@ -170,7 +177,7 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
     {
         std::cerr << "Unknown error while solving the ILP occured." << std::endl;
     }
-    return {-1, -1.0};
+    return {0, ILP_FAILED};
 }
 
 bool verifier(hypergraph *g, std::vector<bool> &IS)
