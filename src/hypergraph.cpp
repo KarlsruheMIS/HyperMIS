@@ -152,9 +152,6 @@ NodeID *hypergraph_get_neighborhood(hypergraph *g, NodeID u, NodeID *neighborhoo
 {
     if (g->has_neighbors)
     {
-        // on-demand: heal on miss, then return the live array (zero-copy, like
-        // -f). Entries are kept consistent by vertex-removal patching; edge
-        // removals may leave a stale neighbor, exactly as under -f.
         if (g->on_demand && !g->N_valid[u])
             hypergraph_on_demand_heal(g, u);
         deg = g->Nd[u];
@@ -265,9 +262,6 @@ void hypergraph_init_on_demand(hypergraph *g)
     g->has_neighbors = true;
 }
 
-// on-demand self-heal: (re)build the current neighborhood of u into g->N[u] from
-// incidence, exactly as hypergraph_build_neighbors does per vertex. Uses the
-// private nbr_scratch so the caller's node_set is never disturbed.
 static void hypergraph_on_demand_heal(hypergraph *g, NodeID u)
 {
     g->Nd[u] = 0;
@@ -342,9 +336,6 @@ void hypergraph_remove_set(NodeID *vec, NodeID &size, fast_set *set)
     size = remaining;
 }
 
-// Like hypergraph_remove_element but tolerates absence. In on-demand mode two
-// neighbor lists may have been built at different times, so u is not guaranteed
-// to be present in a neighbor's list; a blind remove_element would corrupt it.
 static inline void hypergraph_remove_element_if_present(NodeID *vec, NodeID &size, NodeID element)
 {
     NodeID p = lower_bound(vec, size, element);
@@ -368,9 +359,6 @@ void hypergraph_remove_vertex(hypergraph *g, NodeID u, fast_set *processed)
     }
     else if (g->on_demand)
     {
-        // patch populated neighbor lists in place: drop u from every neighbor v
-        // whose entry is built. Enumerate u's neighbors from its own list if
-        // built, else from current incidence.
         if (g->N_valid[u])
         {
             for (NodeID i = 0; i < g->Nd[u]; i++)
@@ -443,7 +431,6 @@ void hypergraph_remove_edges(hypergraph *g, NodeID *E, NodeID e_size, fast_set *
         }
     }
 
-    // deferred to here: the loop above reads E[e] and Ed[e] of every removed edge
     for (NodeID i = 0; i < e_size; i++)
         hypergraph_reset(g, E[i], 1);
 }
@@ -474,7 +461,7 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         }
     }
 
-    // changed[] collects the surviving 2-hop vertices
+    // changed collects the surviving 2-hop vertices
     NodeID changed_size = 0;
     if (g->has_neighbors && !g->on_demand)
     {
@@ -519,9 +506,6 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         }
     }
 
-    // on-demand only: a deleted vertex's own list may never have been built, so the
-    // walk above cannot start from it -- the survivors are collected by incidence
-    // instead, and each one's (populated) list is stripped in one pass.
     for (NodeID i = 0; i < changed_size; i++)
     {
         NodeID v = changed[i];
@@ -601,9 +585,6 @@ hypergraph *hypergraph_build_reduced(hypergraph *g, NodeID *map, NodeID *remap, 
     }
     assert(e <= red_m);
 
-    // In on-demand mode g->N is only partially populated; the reduced graph does
-    // not need a neighbor array (the ILP solver / output use incidence), so skip
-    // rebuilding it and leave rg->has_neighbors = 0.
     if (g->has_neighbors && !g->on_demand)
     {
 
@@ -638,7 +619,7 @@ graph *hypergraph_clique_expansion(hypergraph *hg)
 {
     NodeID *neighbors = (NodeID *)malloc(sizeof(NodeID) * hg->n);
     fast_set n_set(hg->n);
-    NodeID m = 0;
+    long long m = 0;
     NodeID n = hg->n;
 
     for (NodeID v = 0; v < n; v++)
@@ -649,9 +630,19 @@ graph *hypergraph_clique_expansion(hypergraph *hg)
     }
 
     long long *V = (long long *)malloc(sizeof(long long) * (n + 1));
-    NodeID *E = (NodeID *)malloc(sizeof(NodeID) * (m));
+    NodeID *E = (NodeID *)malloc(sizeof(NodeID) * (size_t)m);
 
-    NodeID ei = 0;
+    if (V == NULL || E == NULL)
+    {
+        fprintf(stderr, "ERROR: clique expansion needs %.1f GB for %lld arcs, allocation failed\n",
+                (double)m * sizeof(NodeID) / 1e9, m);
+        free(V);
+        free(E);
+        free(neighbors);
+        return NULL;
+    }
+
+    long long ei = 0;
 
     for (NodeID v = 0; v < n; v++)
     {
@@ -749,7 +740,7 @@ void hypergraph_free(hypergraph *g)
         free(g->Nd);
         free(g->Na);
         for (NodeID i = 0; i < g->n; i++)
-            free(g->N[i]); // NULL-safe: on-demand entries never built stay NULL
+            free(g->N[i]);
 
         free(g->N);
 

@@ -8,6 +8,7 @@
 
 // system includes
 #include <vector>
+#include <limits>
 #include <memory>
 #include <array>
 #include <string>
@@ -164,7 +165,9 @@ struct twin_reduction : public general_reduction
 
 struct unconfined_reduction : public general_reduction
 {
-	unconfined_reduction(size_t n, size_t m) : general_reduction(n)
+	unconfined_reduction(size_t n, size_t m)
+		: general_reduction(n), intersection_count(n, 0), ns_set(n), nu_set(n),
+		  vs1(n, 0), vs2(n, 0)
 	{
 	}
 	~unconfined_reduction() {}
@@ -173,6 +176,12 @@ struct unconfined_reduction : public general_reduction
 	virtual reduction_type get_reduction_type() const final { return reduction_type::unconfined; }
 	virtual std::string get_reduction_name() const final { return "unconfined"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
+
+	std::vector<NodeID> intersection_count;
+	fast_set ns_set;
+	fast_set nu_set;
+	std::vector<NodeID> vs1, vs2;
+	static constexpr NodeID VS_NONE = std::numeric_limits<NodeID>::max();
 };
 
 struct edge_domination_reduction : public general_reduction
@@ -268,7 +277,5 @@ static inline int set_is_equal(const NodeID *A, NodeID a, const NodeID *B, NodeI
 static inline int set_is_subset(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
 // Test if A is a subset of B, ignoring x from A
 static inline int set_is_subset_except_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b, NodeID x);
-// Test if A \ B = \emtpyset (return -1) if A\B = {v} (return v) else return -2
-static inline int set_difference_check(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
 // Test if |A \cap B| == 1
 static inline int set_intersection_equal_one(const NodeID *A, NodeID a, const NodeID *B, NodeID b);
