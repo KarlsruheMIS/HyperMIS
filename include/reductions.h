@@ -18,7 +18,7 @@ enum reduction_type
 {
 	edge_degree_one,
 	node_degree_one,
-	sunflower,
+	fast_node_domination,
 	node_domination,
 	twin,
 	unconfined,
@@ -123,16 +123,19 @@ struct node_degree_one_reduction : public general_reduction
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
-struct sunflower_reduction : public general_reduction
+// Reduction 4.8 (Fast Vertex Domination): if E(v) subseteq E(u) then u dominates
+// v and can be excluded. Read directly off the incidence lists, so it needs no
+// materialized neighborhood. (Historically named "sunflower".)
+struct fast_node_domination_reduction : public general_reduction
 {
-	sunflower_reduction(size_t n,size_t m) : general_reduction(n)
+	fast_node_domination_reduction(size_t n,size_t m) : general_reduction(n)
 	{
 	}
-	~sunflower_reduction() {}
-	virtual sunflower_reduction *clone() const final { return new sunflower_reduction(*this); }
+	~fast_node_domination_reduction() {}
+	virtual fast_node_domination_reduction *clone() const final { return new fast_node_domination_reduction(*this); }
 
-	virtual reduction_type get_reduction_type() const final { return reduction_type::sunflower; }
-	virtual std::string get_reduction_name() const final { return "sunflower"; }
+	virtual reduction_type get_reduction_type() const final { return reduction_type::fast_node_domination; }
+	virtual std::string get_reduction_name() const final { return "fast_node_domination"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 

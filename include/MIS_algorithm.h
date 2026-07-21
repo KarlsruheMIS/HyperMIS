@@ -21,7 +21,7 @@ private:
     friend edge_degree_one_reduction;
     friend node_degree_one_reduction;
     friend twin_reduction;
-    friend sunflower_reduction;
+    friend fast_node_domination_reduction;
     friend node_domination_reduction;
     friend unconfined_reduction;
     friend edge_domination_reduction;

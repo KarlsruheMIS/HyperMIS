@@ -324,7 +324,7 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
   return old_n != status.remaining_nodes;
 }
 
-bool sunflower_reduction::reduce(MISH_algorithm *mish_alg)
+bool fast_node_domination_reduction::reduce(MISH_algorithm *mish_alg)
 {
   auto &status = mish_alg->status;
   NodeID old_n = status.remaining_nodes;
@@ -335,6 +335,9 @@ bool sunflower_reduction::reduce(MISH_algorithm *mish_alg)
     NodeID v = marker.current_element(v_idx);
 
     if (status.node_status[v] != IS_status::not_set)
+      continue;
+
+    if (nbrs_ready(g, v))
       continue;
 
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - mish_alg->start_time).count();

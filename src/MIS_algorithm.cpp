@@ -12,7 +12,7 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction>(status.n, status.m);
         break;
     case 2:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, sunflower_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, fast_node_domination_reduction>(status.n, status.m);
         break;
     case 3:
         status.reductions = make_reduction_vector<edge_degree_one_reduction, edge_domination_reduction>(status.n, status.m);
@@ -27,25 +27,25 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         status.reductions = make_reduction_vector<edge_degree_one_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 7:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 8: // no degree_one
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 9: // no sunflower
+    case 9: // no fast_node_domination
         status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 10: // no edge_domination
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 11: // no node_domination
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, edge_domination_reduction, sunflower_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 12: // no twin
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 13: // no unconfined
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, sunflower_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
         break;
     default:
         break;
