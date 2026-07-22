@@ -51,6 +51,12 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         break;
     }
 
+    // Make sure Include_Deg1 vertices only when degree one rule is enabled (for clean experimental setup)
+    INCLUDE_DEG1 = 0;
+    for (auto &r : status.reductions)
+        if (r->get_reduction_type() == reduction_type::node_degree_one)
+            INCLUDE_DEG1 = 1;
+
     NodeID max_num_reductions = 7;
     NodeID reduction_num = status.reductions.size();
     reduction_map.resize(max_num_reductions);

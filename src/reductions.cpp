@@ -461,7 +461,8 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
 
     if (deg_v <= 1)
     {
-      mish_alg->set(v, IS_status::included);
+      if (deg_v == 0 || INCLUDE_DEG1)
+        mish_alg->set(v, IS_status::included);
       continue;
     }
 
@@ -504,7 +505,8 @@ bool node_domination_reduction::reduce(MISH_algorithm *mish_alg)
 
         if (deg_v - dominated == 1)
         {
-          mish_alg->set(v, IS_status::included);
+          if (INCLUDE_DEG1)
+            mish_alg->set(v, IS_status::included);
           break;
         }
       }

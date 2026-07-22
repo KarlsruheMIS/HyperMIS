@@ -18,4 +18,6 @@ extern size_t USE_NEIGHBORHOOD_ARRAY;
 extern size_t ON_DEMAND_NEIGHBORHOOD;
 extern size_t REDUCTION_CONFIG;
 
+extern size_t INCLUDE_DEG1;
+
 #endif // CONFIG_H
