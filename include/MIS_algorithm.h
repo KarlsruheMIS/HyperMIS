@@ -18,7 +18,7 @@ public:
 
 private:
 
-    friend edge_degree_one_reduction;
+    friend edge_size_reduction;
     friend node_degree_one_reduction;
     friend twin_reduction;
     friend fast_node_domination_reduction;
@@ -54,6 +54,11 @@ public:
     fast_set node_set2;
     fast_set edge_set;
 
+    fast_set requeue_node_set;
+    fast_set requeue_edge_set;
+    std::vector<NodeID> requeue_nodes;
+    std::vector<NodeID> requeue_edges;
+
     NodeID* edge_vec;
     NodeID* node_vec;
     NodeID* node_vec2;
@@ -76,5 +81,8 @@ public:
     void add_next_level_edge(NodeID e);
     void add_next_level_nodes_of_edge(NodeID e);
     void add_next_level_neighborhood(NodeID v);
+
+    void collect_next_level_neighborhood(NodeID v);
+    void flush_next_level();
 };
 

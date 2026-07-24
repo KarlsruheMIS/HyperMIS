@@ -17,13 +17,14 @@ class MISH_algorithm;
 
 enum reduction_type
 {
-	edge_degree_one,
+	edge_size,
 	node_degree_one,
 	fast_node_domination,
 	node_domination,
 	twin,
 	unconfined,
-	edge_domination
+	edge_domination,
+	simplicial
 };
 
 template <typename NodeID>
@@ -97,17 +98,17 @@ struct general_reduction
 	element_marker<NodeID> marker;
 };
 
-struct edge_degree_one_reduction : public general_reduction
+struct edge_size_reduction : public general_reduction
 {
-	edge_degree_one_reduction(size_t n, size_t m) : general_reduction(m)
+	edge_size_reduction(size_t n, size_t m) : general_reduction(m)
 	{
 		vertex_rule = false;
 	}
-	~edge_degree_one_reduction() {}
-	virtual edge_degree_one_reduction *clone() const final { return new edge_degree_one_reduction(*this); }
+	~edge_size_reduction() {}
+	virtual edge_size_reduction *clone() const final { return new edge_size_reduction(*this); }
 
-	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_degree_one; }
-	virtual std::string get_reduction_name() const final { return "edge_degree_one"; }
+	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_size; }
+	virtual std::string get_reduction_name() const final { return "edge_size"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
@@ -124,9 +125,6 @@ struct node_degree_one_reduction : public general_reduction
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 
-// Reduction 4.8 (Fast Vertex Domination): if E(v) subseteq E(u) then u dominates
-// v and can be excluded. Read directly off the incidence lists, so it needs no
-// materialized neighborhood. (Historically named "sunflower".)
 struct fast_node_domination_reduction : public general_reduction
 {
 	fast_node_domination_reduction(size_t n,size_t m) : general_reduction(n)
@@ -198,6 +196,19 @@ struct edge_domination_reduction : public general_reduction
 
 	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_domination; }
 	virtual std::string get_reduction_name() const final { return "edge_domination"; }
+	virtual bool reduce(MISH_algorithm *mish_alg) final;
+};
+
+struct simplicial_reduction : public general_reduction
+{
+	simplicial_reduction(size_t n, size_t m) : general_reduction(n)
+	{
+	}
+	~simplicial_reduction() {}
+	virtual simplicial_reduction *clone() const final { return new simplicial_reduction(*this); }
+
+	virtual reduction_type get_reduction_type() const final { return reduction_type::simplicial; }
+	virtual std::string get_reduction_name() const final { return "simplicial"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 

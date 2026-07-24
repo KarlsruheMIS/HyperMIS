@@ -144,23 +144,171 @@ bool node_degree_one_reduction::reduce(MISH_algorithm *mish_alg)
   return old_n != status.remaining_nodes;
 }
 
-bool edge_degree_one_reduction::reduce(MISH_algorithm *mish_alg)
+bool simplicial_reduction::reduce(MISH_algorithm *mish_alg)
 {
   auto &status = mish_alg->status;
+  auto &nodes = mish_alg->node_set;
+  auto &g = mish_alg->status.hgraph;
+  NodeID old_n = status.remaining_nodes;
+
+  static constexpr NodeID INVALID_EDGE = std::numeric_limits<NodeID>::max();
+  NodeID marked_edge = INVALID_EDGE;
+
+  for (size_t v_idx = 0; v_idx < marker.current_size(); v_idx++)
+  {
+    NodeID v = marker.current_element(v_idx);
+
+    if (status.node_status[v] != IS_status::not_set)
+      continue;
+
+    if (g->Vd[v] < 2 && INCLUDE_DEG1)
+    {
+      mish_alg->set(v, IS_status::included);
+      marked_edge = INVALID_EDGE;
+      continue;
+    }
+
+    if (nbrs_ready(g, v))
+    {
+      bool progress = false;
+      for (NodeID i = 0; i < g->Vd[v] && !progress; i++)
+      {
+        NodeID e = g->V[v][i];
+        if (status.edge_status[e] && g->Ed[e] == g->Nd[v] + 1)
+        {
+          mish_alg->set(v, IS_status::included);
+          marked_edge = INVALID_EDGE;
+          progress = true;
+        }
+      }
+      continue;
+    }
+
+    // on-demand mode: e spans N[v] iff every other incident edge is a subset of it (any such e must be the largest incident edge)
+    NodeID e = INVALID_EDGE;
+    for (NodeID i = 0; i < g->Vd[v]; i++)
+    {
+      NodeID f = g->V[v][i];
+      if (!status.edge_status[f])
+        continue;
+      if (e == INVALID_EDGE || g->Ed[f] > g->Ed[e])
+        e = f;
+    }
+    if (e == INVALID_EDGE)
+      continue;
+
+    if (e != marked_edge)
+    {
+      nodes.clear();
+      for (NodeID j = 0; j < g->Ed[e]; j++)
+        nodes.add(g->E[e][j]);
+      marked_edge = e;
+    }
+
+    bool spans = true;
+    for (NodeID i = 0; i < g->Vd[v] && spans; i++)
+    {
+      NodeID f = g->V[v][i];
+      if (f == e || !status.edge_status[f])
+        continue;
+      if (g->Ed[f] > g->Ed[e])
+      {
+        spans = false;
+        break;
+      }
+      for (NodeID j = 0; j < g->Ed[f]; j++)
+      {
+        if (!nodes.get(g->E[f][j]))
+        {
+          spans = false;
+          break;
+        }
+      }
+    }
+
+    if (spans)
+    {
+      mish_alg->set(v, IS_status::included);
+      marked_edge = INVALID_EDGE;
+    }
+  }
+
+  return old_n != status.remaining_nodes;
+}
+
+bool edge_size_reduction::reduce(MISH_algorithm *mish_alg)
+{
+  auto &status = mish_alg->status;
+  auto &nodes = mish_alg->node_set;
+  auto &g = mish_alg->status.hgraph;
   NodeID old_e = status.remaining_edges;
+  NodeID old_n = status.remaining_nodes;
 
   for (size_t e_idx = 0; e_idx < marker.current_size(); e_idx++)
   {
     NodeID e = marker.current_element(e_idx);
 
-    if (status.edge_status[e] && status.hgraph->Ed[e] <= 1)
+    if (!status.edge_status[e])
+      continue;
+
+    if (g->Ed[e] <= 1)
     {
       mish_alg->remove_edge(e);
-      hypergraph_remove_size_one_edge(status.hgraph, e);
+      hypergraph_remove_size_one_edge(g, e);
+    }
+    else if (status.remaining_nodes == 0)
+    {
+      continue;
+    }
+    else if (g->Ed[e] == status.remaining_nodes)
+    {
+      // e spans the residual, and it is a clique
+      for (NodeID j = 0; j < g->Ed[e]; j++)
+      {
+        NodeID v = g->E[e][j];
+        if (status.node_status[v] == IS_status::not_set)
+        {
+          mish_alg->set(v, IS_status::included);
+          return true;
+        }
+      }
+    }
+    else if (g->Ed[e] + 1 == status.remaining_nodes)
+    {
+      // exactly one vertex outside e, then it is simplicial (either degree 0 or N[u] subseteq e,
+      // e a clique).
+      nodes.clear();
+      for (NodeID j = 0; j < g->Ed[e]; j++)
+        nodes.add(g->E[e][j]);
+
+      NodeID outside = 0;
+      NodeID u = 0;
+      for (NodeID w = 0; w < status.n && outside < 2; w++)
+      {
+        if (status.node_status[w] != IS_status::not_set || nodes.get(w))
+          continue;
+        u = w;
+        outside++;
+      }
+
+      if (outside == 1)
+        mish_alg->set(u, IS_status::included);
+      if (g->Ed[e] > 0)
+      {
+        for (NodeID j = 0; j < g->Ed[e]; j++)
+        {
+          NodeID v = g->E[e][j];
+          if (status.node_status[v] == IS_status::not_set)
+          {
+            mish_alg->set(v, IS_status::included);
+            return true;
+          }
+        }
+      }
     }
   }
 
-  return old_e != status.remaining_edges;
+  return old_e != status.remaining_edges || old_n != status.remaining_nodes;
 }
 
 bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
@@ -233,10 +381,8 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
 
     add_to_S(v);
 
-    // Grow S until no child extends it. Each pass scans the children of S
-    // (|N(u) cap S| == 1); a child with two or more vertices outside N[S] neither
-    // excludes v nor extends S, but a later child still can, so skip it and keep
-    // scanning.
+    // grow S until no child extends it. Each pass scans the children of S (|N(u) cap S| == 1)
+    // a child with two or more vertices outside N[S] neither excludes v nor extends S but a later child still can so skip it and keep scanning
     bool ok = false;
     while (!ok && !v_unconfined)
     {
@@ -255,8 +401,8 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
         NodeID Nd;
         NodeID *n = hypergraph_get_neighborhood(g, u, neighbors, Nd, mish_alg->node_set2);
 
-        // |N(u) \ N[S]|, capped at 2 -- we only ever distinguish 0, 1 and "many".
-        // |N(u)\N[S]| >= |N(u)| - |N[S]|, so a child with Nd > |N[S]|+1 cannot have a difference below 2 and needs no scan.
+        // |N(u) \ N[S]|, capped at 2 -- we only ever distinguish 0, 1 and many
+        // |N(u)\N[S]| >= |N(u)| - |N[S]|, so a child with Nd > |N[S]|+1 cannot have a difference below 2 and needs no scan
         bool many = (Nd > neighborhood_S_size + 1);
         bool found = false;
         NodeID z = 0;
@@ -285,14 +431,14 @@ bool unconfined_reduction::reduce(MISH_algorithm *mish_alg)
           break;
         }
 
-        // Exactly one vertex outside N[S] -> extend S with it and keep scanning.
+        // Exactly one vertex outside N[S] -> extend S with it and keep scanning
         ok = false;
         add_to_S(z);
       }
     }
 
     // Diamond/satellite extension:
-    // Two vertices u_i, u_j that are NOT adjacent, each having exactly the same two
+    // two vertices u_i, u_j that are NOT adjacent, each having exactly the same two
     // S-neighbours and no neighbour outside N[S], form a diamond that forces v out of
     // every maximum independent set.
     if (!v_unconfined && S_size >= 2)

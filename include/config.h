@@ -20,4 +20,6 @@ extern size_t REDUCTION_CONFIG;
 
 extern size_t INCLUDE_DEG1;
 
+constexpr size_t REQUEUE_BATCH_MIN = 16;
+
 #endif // CONFIG_H

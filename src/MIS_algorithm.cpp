@@ -1,6 +1,6 @@
 #include "MIS_algorithm.h"
 
-MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), node_set(hgr->n), node_set2(hgr->n), edge_set(hgr->m)
+MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), node_set(hgr->n), node_set2(hgr->n), edge_set(hgr->m), requeue_node_set(hgr->n), requeue_edge_set(hgr->m)
 {
     start_time = std::chrono::high_resolution_clock::now();
     switch (REDUCTION_CONFIG)
@@ -8,56 +8,75 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
     case 0:
         REDUCE = 0;
         break;
-    case 1:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction>(status.n, status.m);
+
+    // Single-reduction runs (1-8): exactly one rule, isolated effect
+    case 1: // edge_size
+        status.reductions = make_reduction_vector<edge_size_reduction>(status.n, status.m);
         break;
-    case 2:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, fast_node_domination_reduction>(status.n, status.m);
+    case 2: // node_degree_one
+        status.reductions = make_reduction_vector<node_degree_one_reduction>(status.n, status.m);
         break;
-    case 3:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, edge_domination_reduction>(status.n, status.m);
+    case 3: // simplicial
+        status.reductions = make_reduction_vector<simplicial_reduction>(status.n, status.m);
         break;
-    case 4:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_domination_reduction>(status.n, status.m);
+    case 4: // fast_node_domination
+        status.reductions = make_reduction_vector<fast_node_domination_reduction>(status.n, status.m);
         break;
-    case 5:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, twin_reduction>(status.n, status.m);
+    case 5: // edge_domination
+        status.reductions = make_reduction_vector<edge_domination_reduction>(status.n, status.m);
         break;
-    case 6:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, unconfined_reduction>(status.n, status.m);
+    case 6: // node_domination
+        status.reductions = make_reduction_vector<node_domination_reduction>(status.n, status.m);
         break;
-    case 7:
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+    case 7: // twin
+        status.reductions = make_reduction_vector<twin_reduction>(status.n, status.m);
         break;
-    case 8: // no degree_one
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+    case 8: // unconfined
+        status.reductions = make_reduction_vector<unconfined_reduction>(status.n, status.m);
         break;
-    case 9: // no fast_node_domination
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+
+    // Full pipeline (9): all rules in application order 
+    case 9:
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 10: // no edge_domination
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+
+    // Disable-one from full (10-17) 
+    case 10: // no edge_size
+        status.reductions = make_reduction_vector<node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 11: // no node_domination
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+    case 11: // no node_degree_one
+        status.reductions = make_reduction_vector<edge_size_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 12: // no twin
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
+    case 12: // no simplicial
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 13: // no unconfined
-        status.reductions = make_reduction_vector<edge_degree_one_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
+    case 13: // no fast_node_domination
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 14: // no edge_domination
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 15: // no node_domination
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 16: // no twin
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 17: // no unconfined
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
         break;
     default:
         break;
     }
 
-    // Make sure Include_Deg1 vertices only when degree one rule is enabled (for clean experimental setup)
+    // Make sure Include_Deg1 vertices only when degree one rule is enabled (for clean experimental setup).
     INCLUDE_DEG1 = 0;
     for (auto &r : status.reductions)
-        if (r->get_reduction_type() == reduction_type::node_degree_one)
+        if (r->get_reduction_type() == reduction_type::node_degree_one ||
+            r->get_reduction_type() == reduction_type::simplicial)
             INCLUDE_DEG1 = 1;
 
-    NodeID max_num_reductions = 7;
+    NodeID max_num_reductions = 8;
     NodeID reduction_num = status.reductions.size();
     reduction_map.resize(max_num_reductions);
 
@@ -100,27 +119,21 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
     if (is_status == IS_status::included)
     {
         status.IS_size++;
+
+        size_t incidence = 0;
         if (g->has_neighbors && !g->on_demand)
-        {
-            for (NodeID i = 0; i < g->Nd[u]; i++)
-            {
-                NodeID v = g->N[u][i];
-                if (status.node_status[v] == IS_status::not_set)
-                {
-                    status.remaining_nodes--;
-                    status.node_status[v] = IS_status::excluded;
-                    add_next_level_neighborhood(v);
-                }
-            }
-        }
+            incidence = g->Nd[u];
         else
-        {
             for (NodeID i = 0; i < g->Vd[u]; i++)
+                incidence += g->Ed[g->V[u][i]];
+
+        if (incidence < REQUEUE_BATCH_MIN)
+        {
+            if (g->has_neighbors && !g->on_demand)
             {
-                NodeID e = g->V[u][i];
-                for (NodeID j = 0; j < g->Ed[e]; j++)
+                for (NodeID i = 0; i < g->Nd[u]; i++)
                 {
-                    NodeID v = g->E[e][j];
+                    NodeID v = g->N[u][i];
                     if (status.node_status[v] == IS_status::not_set)
                     {
                         status.remaining_nodes--;
@@ -129,6 +142,58 @@ void MISH_algorithm::set(NodeID u, IS_status is_status)
                     }
                 }
             }
+            else
+            {
+                for (NodeID i = 0; i < g->Vd[u]; i++)
+                {
+                    NodeID e = g->V[u][i];
+                    for (NodeID j = 0; j < g->Ed[e]; j++)
+                    {
+                        NodeID v = g->E[e][j];
+                        if (status.node_status[v] == IS_status::not_set)
+                        {
+                            status.remaining_nodes--;
+                            status.node_status[v] = IS_status::excluded;
+                            add_next_level_neighborhood(v);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            // batched path
+            if (g->has_neighbors && !g->on_demand)
+            {
+                for (NodeID i = 0; i < g->Nd[u]; i++)
+                {
+                    NodeID v = g->N[u][i];
+                    if (status.node_status[v] == IS_status::not_set)
+                    {
+                        status.remaining_nodes--;
+                        status.node_status[v] = IS_status::excluded;
+                        collect_next_level_neighborhood(v);
+                    }
+                }
+            }
+            else
+            {
+                for (NodeID i = 0; i < g->Vd[u]; i++)
+                {
+                    NodeID e = g->V[u][i];
+                    for (NodeID j = 0; j < g->Ed[e]; j++)
+                    {
+                        NodeID v = g->E[e][j];
+                        if (status.node_status[v] == IS_status::not_set)
+                        {
+                            status.remaining_nodes--;
+                            status.node_status[v] = IS_status::excluded;
+                            collect_next_level_neighborhood(v);
+                        }
+                    }
+                }
+            }
+            flush_next_level();
         }
 
         for (NodeID e = 0; e < g->Vd[u]; e++)
@@ -169,10 +234,6 @@ void MISH_algorithm::init_reduction_step()
 
 void MISH_algorithm::reduce_graph()
 {
-    // Staged escalation of node_domination's reach: reduce to a fixpoint at
-    // factor 1 first (so the cheap rules finish), then re-sweep the smaller
-    // residual at the full NODE_DOM_FACTOR. Without escalation it is a single
-    // stage at the requested factor.
     const size_t target_factor = NODE_DOM_FACTOR;
     std::vector<size_t> stages;
     if (target_factor > 1)
@@ -297,6 +358,40 @@ void MISH_algorithm::add_next_level_neighborhood(NodeID v)
             add_next_level_node(u);
         }
     }
+}
+
+// add_next_level_neighborhood, for when a whole neighborhood is removed at once
+void MISH_algorithm::collect_next_level_neighborhood(NodeID v)
+{
+    for (NodeID i = 0; i < status.hgraph->Vd[v]; i++)
+    {
+        NodeID e = status.hgraph->V[v][i];
+        if (requeue_edge_set.add(e))
+            requeue_edges.push_back(e);
+    }
+}
+
+void MISH_algorithm::flush_next_level()
+{
+    for (NodeID e : requeue_edges)
+    {
+        add_next_level_edge(e);
+
+        for (NodeID j = 0; j < status.hgraph->Ed[e]; j++)
+        {
+            NodeID u = status.hgraph->E[e][j];
+            if (requeue_node_set.add(u))
+                requeue_nodes.push_back(u);
+        }
+    }
+
+    for (NodeID u : requeue_nodes)
+        add_next_level_node(u);
+
+    requeue_edges.clear();
+    requeue_nodes.clear();
+    requeue_edge_set.clear();
+    requeue_node_set.clear();
 }
 
 void MISH_algorithm::remove_edge(NodeID edge)

@@ -82,6 +82,8 @@ hypergraph *hypergraph_init(NodeID n, NodeID m)
     g->on_demand = 0;
     g->N_valid = NULL;
     g->nbr_scratch = NULL;
+    g->edge_scratch = NULL;
+    g->n_healed = 0;
 
     g->Vd = (NodeID *)malloc(sizeof(NodeID) * n);
     g->Va = (NodeID *)malloc(sizeof(NodeID) * n);
@@ -258,6 +260,7 @@ void hypergraph_init_on_demand(hypergraph *g)
     }
 
     g->nbr_scratch = new fast_set(g->n);
+    g->edge_scratch = new fast_set(g->m);
     g->on_demand = true;
     g->has_neighbors = true;
 }
@@ -286,6 +289,7 @@ static void hypergraph_on_demand_heal(hypergraph *g, NodeID u)
     }
     std::sort(g->N[u], g->N[u] + g->Nd[u]);
     g->N_valid[u] = true;
+    g->n_healed++;
 }
 
 // type=0 g->V  type=1 g->E  type=2 g->N
@@ -447,6 +451,7 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
     if (g->on_demand)
         g->N_valid[u] = false; // u is included and removed from the graph
 
+    NodeID dying = 0;
     for (NodeID i = 0; i < g->Vd[u]; i++)
     {
         NodeID e = g->V[u][i];
@@ -455,7 +460,8 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
         for (NodeID j = 0; j < g->Ed[e]; j++)
         {
             NodeID v = g->E[e][j];
-            nodes->add(v);
+            if (nodes->add(v))
+                dying++;
             if (g->on_demand)
                 g->N_valid[v] = false; // neighbors of u are excluded and removed
         }
@@ -476,10 +482,21 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
             }
         }
     }
-    else if (g->on_demand)
+    else if (g->on_demand && g->n_healed > 0)
     {
+        // each 2-hop edge is expanded once, not once per removed vertex 
+        const bool dedup_2hop = (dying >= REQUEUE_BATCH_MIN);
+
         fast_set *v_seen = g->nbr_scratch;
+        fast_set *f_seen = g->edge_scratch;
         v_seen->clear();
+        if (dedup_2hop)
+        {
+            f_seen->clear();
+            for (NodeID i = 0; i < g->Vd[u]; i++)
+                f_seen->add(g->V[u][i]);
+        }
+
         for (NodeID i = 0; i < g->Vd[u]; i++)
         {
             NodeID e = g->V[u][i];
@@ -492,8 +509,15 @@ void hypergraph_remove_neighborhood(hypergraph *g, NodeID u, fast_set *nodes, fa
                 for (NodeID k = 0; k < g->Vd[v]; k++)
                 {
                     NodeID f = g->V[v][k]; // v's incident edges
-                    if (edges->get(f))     // skip u's own (deleted) edges
+                    if (dedup_2hop)
+                    {
+                        if (!f_seen->add(f)) // u's own edge, or already expanded
+                            continue;
+                    }
+                    else if (edges->get(f)) // skip u's own (deleted) edges
+                    {
                         continue;
+                    }
 
                     for (NodeID l = 0; l < g->Ed[f]; l++)
                     {
@@ -748,6 +772,7 @@ void hypergraph_free(hypergraph *g)
         {
             free(g->N_valid);
             delete g->nbr_scratch;
+            delete g->edge_scratch;
         }
     }
 

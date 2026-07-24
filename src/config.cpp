@@ -11,5 +11,5 @@ size_t NODE_DOM_FACTOR = 5;
 
 size_t USE_NEIGHBORHOOD_ARRAY = 0;
 size_t ON_DEMAND_NEIGHBORHOOD = 0;
-size_t REDUCTION_CONFIG = 7;
+size_t REDUCTION_CONFIG = 9; // full pipeline
 size_t INCLUDE_DEG1 = 1;

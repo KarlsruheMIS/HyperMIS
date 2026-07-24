@@ -62,11 +62,13 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
             model.addConstr(edge_constraint <= 1);
         }
 
-        // MIPGap
         model.set(GRB_DoubleParam_MIPGap, 0.0);
         time_passed = std::chrono::high_resolution_clock::now() - start_time;
-        // timelimit
-        model.set(GRB_DoubleParam_TimeLimit, time_limit_seconds - time_passed.count());
+        double remaining = time_limit_seconds - time_passed.count();
+        if (remaining <= 0)
+            return {0, 0};
+
+        model.set(GRB_DoubleParam_TimeLimit, remaining);
 
         model.optimize();
 
@@ -102,8 +104,12 @@ std::pair<NodeID, int> ILP_solver(hypergraph *g, double time_limit_seconds, std:
 std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, std::chrono::_V2::system_clock::time_point start_time, std::vector<bool> &solution)
 {
     if (g->n == 0)
-    {
         return {0, 0.0};
+
+    std::chrono::duration<double> time_passed = std::chrono::high_resolution_clock::now() - start_time;
+    if (time_limit_seconds - time_passed.count() <= 0)
+    {
+        return {0, 0};
     }
     try
     {
@@ -142,11 +148,13 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
             }
         }
 
-        // MIPGap
         model.set(GRB_DoubleParam_MIPGap, 0.0);
-        std::chrono::duration<double> time_passed = std::chrono::high_resolution_clock::now() - start_time;
-        // timelimit
-        model.set(GRB_DoubleParam_TimeLimit, time_limit_seconds - time_passed.count());
+        time_passed = std::chrono::high_resolution_clock::now() - start_time;
+        double remaining = time_limit_seconds - time_passed.count();
+        if (remaining <= 0)
+            return {0, 0};
+        
+        model.set(GRB_DoubleParam_TimeLimit, remaining);
 
         model.optimize();
 
@@ -154,7 +162,6 @@ std::pair<NodeID, int> ILP_solver_graphs(graph *g, double time_limit_seconds, st
 
         NodeID res = 0;
 
-        // See ILP_solver: no incumbent means GRB_DoubleAttr_X is unreadable.
         if (model.get(GRB_IntAttr_SolCount) > 0)
         {
             for (NodeID i = 0; i < g->n; ++i)
