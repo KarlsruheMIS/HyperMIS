@@ -9,21 +9,21 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
         REDUCE = 0;
         break;
 
-    // Single-reduction runs (1-8): exactly one rule, isolated effect
+    // Single-reduction runs (1-8): exactly one rule, isolated effect.
     case 1: // edge_size
         status.reductions = make_reduction_vector<edge_size_reduction>(status.n, status.m);
         break;
     case 2: // node_degree_one
         status.reductions = make_reduction_vector<node_degree_one_reduction>(status.n, status.m);
         break;
-    case 3: // simplicial
+    case 3: // edge_domination
+        status.reductions = make_reduction_vector<edge_domination_reduction>(status.n, status.m);
+        break;
+    case 4: // simplicial
         status.reductions = make_reduction_vector<simplicial_reduction>(status.n, status.m);
         break;
-    case 4: // fast_node_domination
+    case 5: // fast_node_domination
         status.reductions = make_reduction_vector<fast_node_domination_reduction>(status.n, status.m);
-        break;
-    case 5: // edge_domination
-        status.reductions = make_reduction_vector<edge_domination_reduction>(status.n, status.m);
         break;
     case 6: // node_domination
         status.reductions = make_reduction_vector<node_domination_reduction>(status.n, status.m);
@@ -37,33 +37,33 @@ MISH_algorithm::MISH_algorithm(hypergraph *hgr) : status(hgraph_status(hgr)), no
 
     // Full pipeline (9): all rules in application order 
     case 9:
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
 
-    // Disable-one from full (10-17) 
+    // Disable-one from full (10-17): config 9+k drops the k-th rule.
     case 10: // no edge_size
-        status.reductions = make_reduction_vector<node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 11: // no node_degree_one
-        status.reductions = make_reduction_vector<edge_size_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_size_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
-    case 12: // no simplicial
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;
-    case 13: // no fast_node_domination
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
-        break;
-    case 14: // no edge_domination
+    case 12: // no edge_domination
         status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
+    case 13: // no simplicial
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
+    case 14: // no fast_node_domination
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        break;
     case 15: // no node_domination
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, twin_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 16: // no twin
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, unconfined_reduction>(status.n, status.m);
         break;
     case 17: // no unconfined
-        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, simplicial_reduction, fast_node_domination_reduction, edge_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
+        status.reductions = make_reduction_vector<edge_size_reduction, node_degree_one_reduction, edge_domination_reduction, simplicial_reduction, fast_node_domination_reduction, node_domination_reduction, twin_reduction>(status.n, status.m);
         break;
     default:
         break;
