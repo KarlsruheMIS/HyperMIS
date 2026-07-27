@@ -31,9 +31,11 @@ add_library(libfiles OBJECT ${LIBFILES})
 add_executable(run_reduce app/run_reduce.cpp)
 add_executable(run_ilp app/run_ilp.cpp src/ILP_solver.cpp)
 add_executable(hypergraph_to_graph app/hypergraph_to_graph.cpp)
+add_executable(clique_blowup app/clique_blowup.cpp)
 
 target_link_libraries(run_reduce libfiles)
 target_link_libraries(hypergraph_to_graph libfiles)
+target_link_libraries(clique_blowup libfiles)
 target_link_libraries(run_ilp libfiles gurobi_c++ gurobi120)
 
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_HOME}/lib")
