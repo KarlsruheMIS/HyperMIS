@@ -157,10 +157,15 @@ int main(int argc, char **argv)
 
         assert(hypergraph_validate(g));
         MISH_algorithm *mis_alg = new MISH_algorithm(g);
-        if (USE_NEIGHBORHOOD_ARRAY)
-            hypergraph_build_neighbors(g, &(mis_alg->node_set));
-        else if (ON_DEMAND_NEIGHBORHOOD)
-            hypergraph_init_on_demand(g);
+        // The neighborhood array exists only to serve the reduction rules, so
+        // there is nothing to build when they are disabled (see run_ilp.cpp).
+        if (REDUCE)
+        {
+            if (USE_NEIGHBORHOOD_ARRAY)
+                hypergraph_build_neighbors(g, &(mis_alg->node_set));
+            else if (ON_DEMAND_NEIGHBORHOOD)
+                hypergraph_init_on_demand(g);
+        }
 
         mis_alg->reduce_graph();
 

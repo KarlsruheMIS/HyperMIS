@@ -118,10 +118,13 @@ int main(int argc, char **argv)
 
     assert(hypergraph_validate(g));
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
-    if (USE_NEIGHBORHOOD_ARRAY)
-        hypergraph_build_neighbors(g, &(mis_alg->node_set));
-    else if (ON_DEMAND_NEIGHBORHOOD)
-        hypergraph_init_on_demand(g);
+    if (REDUCE)
+    {
+        if (USE_NEIGHBORHOOD_ARRAY)
+            hypergraph_build_neighbors(g, &(mis_alg->node_set));
+        else if (ON_DEMAND_NEIGHBORHOOD)
+            hypergraph_init_on_demand(g);
+    }
 
     mis_alg->reduce_graph();
 

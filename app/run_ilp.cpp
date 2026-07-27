@@ -117,10 +117,18 @@ int main(int argc, char **argv)
     fclose(hgr_file);
 
     MISH_algorithm *mis_alg = new MISH_algorithm(g);
-    if (USE_NEIGHBORHOOD_ARRAY)
-        hypergraph_build_neighbors(g, &mis_alg->node_set);
-    else if (ON_DEMAND_NEIGHBORHOOD)
-        hypergraph_init_on_demand(g);
+    if (REDUCE)
+    {
+        if (USE_NEIGHBORHOOD_ARRAY)
+            hypergraph_build_neighbors(g, &mis_alg->node_set);
+        else if (ON_DEMAND_NEIGHBORHOOD)
+            hypergraph_init_on_demand(g);
+    }
+    else if (USE_NEIGHBORHOOD_ARRAY || ON_DEMAND_NEIGHBORHOOD)
+    {
+        std::cerr << "Note: -" << (USE_NEIGHBORHOOD_ARRAY ? 'n' : 'd')
+                  << " has no effect without reductions; ignoring it." << std::endl;
+    }
     // assert(hypergraph_validate(g));
     std::vector<bool> sol(g->n, false);
     std::pair<NodeID, int> ILP_solution;
