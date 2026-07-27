@@ -16,7 +16,7 @@ const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Inde
                    "\nThe output of the program without -v is a single line on the form:\n"
                    "instance_name,#vertices,#edges,average_edge_size,#reduced_vertices,#reduced_edges,reduced_avg_edge_size,offset,time,seed\n"
                    "\n-h \t\tDisplay this help message\n"
-                   "-r \t\tReduction Config: [0: disable all | 1,...,8 (only edge_size, node_degree_one, simplicial, fast_node_domination, edge_domination, node_domination, twin, unconfined resp.) | 9: all | 10,...,17 (disable the respective rule of 1,...,8)] \t\t\t default all reductions enabled (9)\n"
+                   "-r \t\tReduction Config: [0: disable all | 1,...,8 (only edge_size, node_degree_one, edge_domination, simplicial, fast_node_domination, node_domination, twin, unconfined resp.) | 9: all | 10,...,17 (disable the respective rule of 1,...,8)] \t\t\t default all reductions enabled (9)\n"
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-e \t\tExperiment mode, output reduction statistics to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"

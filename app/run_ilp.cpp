@@ -13,14 +13,14 @@
 #include <getopt.h>
 #include <cassert>
 
-const char *help = "hyperMISReduce --- Data reduction rules for the Maximum Independent Set problem on Hypergraphs\n"
+const char *help = "hyperMIS ILP --- ILP solver (with optional data reductions) for the Maximum Independent Set problem on Hypergraphs\n"
                    "\nThe output of the program without -v is a single line on the form:\n"
                    "instance_name,#vertices,#edges,is_weight,time,seed\n"
                    "\n-h \t\tDisplay this help message\n"
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tPath to store the best solution found \t\t default not stored\n"
-                   "-r \t\tReduction Config: [0: disable all | 1,...,8 (only edge_size, node_degree_one, simplicial, fast_node_domination, edge_domination, node_domination, twin, unconfined resp.) | 9: all | 10,...,17 (disable the respective rule of 1,...,8)] \t\t\t default all reductions enabled (9)\n"
+                   "-r \t\tReduction Config: [0: disable all | 1,...,8 (only edge_size, node_degree_one, edge_domination, simplicial, fast_node_domination, node_domination, twin, unconfined resp.) | 9: all | 10,...,17 (disable the respective rule of 1,...,8)] \t\t\t default all reductions enabled (9)\n"
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
