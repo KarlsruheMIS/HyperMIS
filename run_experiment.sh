@@ -81,7 +81,7 @@ parallel -j "${n}" --noswap --delay 1 -k run_reduce {1} {2} -n ::: "${SEEDS[@]}"
 echo -e "graph\talgo\tn\tm\te\trn\trm\tre\toffset\ttime\tseed\tmem" > "${fred_file}"
 parallel -j "${n}" --noswap --delay 1 -k run_reduce {1} {2} -d ::: "${SEEDS[@]}" ::: "${hypergraphs}"/* >> "${fred_file}"
 echo -e "graph\talgo\tn\tm\te\trn\trm\tre\toffset\ttime\tseed\tmem" > "${red_file}"
-parallel -j "${n}" --noswap --delay 1 -k run_reduce {1} {2} -r9 ::: "${SEEDS[@]}" ::: "${hypergraphs}"/* >> "${red_file}"
+parallel -j "${n}" --noswap --delay 1 -k run_reduce {1} {2} -r8 ::: "${SEEDS[@]}" ::: "${hypergraphs}"/* >> "${red_file}"
 
 #####  ILP
 # echo "Starting ILP Experiments"

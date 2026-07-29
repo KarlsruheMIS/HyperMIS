@@ -23,8 +23,7 @@ enum reduction_type
 	node_domination,
 	twin,
 	unconfined,
-	edge_domination,
-	simplicial
+	edge_domination
 };
 
 template <typename NodeID>
@@ -196,19 +195,6 @@ struct edge_domination_reduction : public general_reduction
 
 	virtual reduction_type get_reduction_type() const final { return reduction_type::edge_domination; }
 	virtual std::string get_reduction_name() const final { return "edge_domination"; }
-	virtual bool reduce(MISH_algorithm *mish_alg) final;
-};
-
-struct simplicial_reduction : public general_reduction
-{
-	simplicial_reduction(size_t n, size_t m) : general_reduction(n)
-	{
-	}
-	~simplicial_reduction() {}
-	virtual simplicial_reduction *clone() const final { return new simplicial_reduction(*this); }
-
-	virtual reduction_type get_reduction_type() const final { return reduction_type::simplicial; }
-	virtual std::string get_reduction_name() const final { return "simplicial"; }
 	virtual bool reduce(MISH_algorithm *mish_alg) final;
 };
 

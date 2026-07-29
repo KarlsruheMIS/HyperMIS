@@ -26,7 +26,7 @@ Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
 
 Given a hypergraph $H = (V, \mathcal{E})$, a **strong independent set** is a subset $S \subseteq V$ such that each hyperedge contains **at most one** vertex from $S$. Finding a maximum strong independent set is NP-hard. HyperMIS provides an ILP-based exact solver with data reduction preprocessing that shrinks instances to approximately 22% of their original size, achieving average speedups of 3.84&times; and up to 53&times; on real-world instances.
 
-The solver implements nine reduction rules &mdash; including degree-one, twin, sunflower, clique, domination, and unconfined reductions &mdash; as a preprocessing step for any solver. Applications include constructing **perfect minimal hash functions** and other combinatorial optimization tasks on hypergraphs.
+The solver implements seven reduction rules &mdash; edge size, degree one, edge domination, fast node domination, node domination, twin, and unconfined &mdash; as a preprocessing step for any solver. Applications include constructing **perfect minimal hash functions** and other combinatorial optimization tasks on hypergraphs.
 
 This is joint work by Ernestine Gro&szlig;mann, Christian Schulz, Darren Strash, and Antonie Wagner.
 
@@ -50,10 +50,11 @@ This produces the following executables:
 
 | Executable | Description |
 |:-----------|:------------|
-| `run_ilp` | Solve MIS on hypergraphs (with optional reductions) |
-| `run_ilp_graph` | Solve MIS on standard graphs (with optional reductions) |
+| `run_ilp` | Solve MIS on hypergraphs (with optional reductions); `-e` solves the clique expansion as a standard graph instead |
 | `run_reduce` | Apply reduction rules only |
 | `hypergraph_to_graph` | Convert hypergraph to standard graph format |
+| `clique_blowup` | Reduce, then measure the size of the clique expansion |
+| `graph_reduction_comparison` | Apply the KaMIS graph reductions to the clique expansion, for comparison |
 
 ## Program Options
 
@@ -63,10 +64,11 @@ This produces the following executables:
 | `-v` | Verbose mode, shows continuous updates to STDOUT | | |
 | `-g path` | Path to the input hypergraph, see input format | | &check; |
 | `-o path` | Path to the output for the reduced hypergraph | | |
-| `-t sec` | Timeout in seconds | 3600 (1h) | |
+| `-t sec` | Timeout in seconds (in `run_reduce` an alias for `-k`) | 3600 (1h) | |
+| `-k sec` | Time budget for the reductions | 100 | |
 | `-s seed` | User-specific input seed | | |
-| `-r` | Enable reductions | | |
-| `-e` | Experiment configuration for reduction statistics | | |
+| `-r cfg` | Reduction config: 0 none, 1&ndash;7 a single rule, 8 the full pipeline, 9&ndash;15 the full pipeline minus the respective rule of 1&ndash;7 | 8 | |
+| `-e` | `run_reduce`: experiment configuration for reduction statistics. `run_ilp`: clique-expand the hypergraph and solve it as a standard graph | | |
 
 The output without the `-v` option is a single CSV line:
 ```
@@ -81,17 +83,17 @@ instance_name,seed,#reduced_vertices,#reduced_edges,time,reduction_name
 
 ### Solve a hypergraph with reductions
 ```bash
-./run_ilp -g instance.hgr -r -t 3600
+./run_ilp -g instance.hgr -r8 -t 3600
 ```
 
 ### Apply strong reductions only
 ```bash
-./run_reduce -g instance.hgr -p -o reduced.hgr
+./run_reduce -g instance.hgr -o reduced.hgr
 ```
 
-### Solve a standard graph
+### Solve the clique expansion as a standard graph
 ```bash
-./run_ilp_graph -g graph.graph -r -t 3600
+./run_ilp -g instance.hgr -e -r8 -t 3600
 ```
 
 ### Convert hypergraph to graph

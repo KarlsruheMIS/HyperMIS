@@ -20,7 +20,7 @@ const char *help = "hyperMIS ILP --- ILP solver (with optional data reductions) 
                    "-v \t\tVerbose mode, output continous updates to STDOUT\n"
                    "-g path* \tPath to the input hypergraph in METIS format\n"
                    "-o path \tPath to store the best solution found \t\t default not stored\n"
-                   "-r \t\tReduction Config: [0: disable all | 1,...,8 (only edge_size, node_degree_one, edge_domination, simplicial, fast_node_domination, node_domination, twin, unconfined resp.) | 9: all | 10,...,17 (disable the respective rule of 1,...,8)] \t\t\t default all reductions enabled (9)\n"
+                   "-r \t\tReduction Config: [0: disable all | 1,...,7 (only edge_size, node_degree_one, edge_domination, fast_node_domination, node_domination, twin, unconfined resp.) | 8: all | 9,...,15 (disable the respective rule of 1,...,7)] \t\t\t default all reductions enabled (8)\n"
                    "-t sec \t\tTimout in seconds \t\t\t\t default 3600 seconds\n"
                    "-s s \t\tSet a specific random seed \t\t\t default time(NULL)\n"
                    "-k sec \t\tSet time limit for reduction \t\t\t default 100\n"
