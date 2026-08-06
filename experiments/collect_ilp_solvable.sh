@@ -19,7 +19,9 @@ source "$HERE/config.sh"
 
 res="$RES"
 hypergraphs="$HG_FULL"
-dest="$HG_SOLVABLE"
+# HG_SOLVABLE_DIR, not HG_SOLVABLE: the latter falls back to HG_FULL while the
+# subset does not exist yet, and this script must never be aimed at the full set.
+dest="$HG_SOLVABLE_DIR"
 
 # ILP result files with the "graph algo size time opt seed mem" schema (opt = col 5).
 # grilp.tsv is EXCLUDED: it comes from graph_reduction_comparison and has no opt column.
@@ -42,7 +44,26 @@ existing=()
 for f in "${opt_files[@]}"; do
   [ -f "$f" ] && existing+=("$f")
 done
+
+# No ILP results yet (fresh clone). Bail out before touching anything: with no
+# file arguments awk reads STDIN, which hangs on a terminal, and the empty result
+# would replace a good subset with one that silently disables every ILP block.
+if [ ${#existing[@]} -eq 0 ]; then
+  echo "ERROR: no ILP result files under $res/ILP -- nothing to derive the subset from." >&2
+  echo "       Run the ILP blocks first: experiments/run_experiment.sh" >&2
+  echo "       (until then the ILP blocks fall back to the full set, which is what" >&2
+  echo "        produces the results this script reads)." >&2
+  exit 1
+fi
+
 solvable=$(awk -F'\t' 'FNR>1 && $5==1{print $1}' "${existing[@]}" | sort -u)
+
+# Likewise, never replace an existing subset with an empty one.
+if [ -z "$solvable" ]; then
+  echo "ERROR: no instance is marked optimal (opt=1) in $res/ILP -- refusing to write an" >&2
+  echo "       empty subset, which would silently disable every ILP block." >&2
+  exit 1
+fi
 
 # This script rebuilds $dest from scratch, so it starts with `rm -rf`. That is
 # safe only for a directory it owns -- a folder of symlinks it created itself.

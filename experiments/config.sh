@@ -29,23 +29,52 @@ FAILURES="$RES/FAILURES.tsv"
 #   HG_FULL=~/test_instances/hypergraphs \
 #   HG_SOLVABLE=~/test_instances/hypergraphs_ilp_solvable experiments/run_all.sh
 HG_FULL="${HG_FULL:-$REPO_DIR/hypergraphs}"
-HG_SOLVABLE="${HG_SOLVABLE:-$REPO_DIR/hypergraphs_ilp_solvable}"
 
-# A missing or empty set is a silent no-op otherwise: `mapfile < <(ls DIR/*)`
-# yields nothing, every block reports "0/0 groups, nothing to do", and it looks
-# like the experiment ran. Say so loudly instead. Not fatal -- status.sh must
-# stay readable, and collect_ilp_solvable.sh legitimately runs before
-# HG_SOLVABLE exists.
+# Did the caller name a solvable set explicitly? Decides whether a missing one is
+# a bootstrap situation (fall back) or a mistake (warn) -- see below.
+_HG_SOLVABLE_EXPLICIT=${HG_SOLVABLE:+1}
+# Where collect_ilp_solvable.sh WRITES the subset. Distinct from HG_SOLVABLE
+# because that may fall back to HG_FULL below, and the generator must never be
+# aimed at the full set.
+HG_SOLVABLE_DIR="${HG_SOLVABLE:-$REPO_DIR/hypergraphs_ilp_solvable}"
+HG_SOLVABLE="$HG_SOLVABLE_DIR"
+
+# True when a directory is absent or holds nothing.
+_set_unusable() { [[ ! -d "$1" || -z "$(ls -A "$1" 2>/dev/null)" ]]; }
+
+# Bootstrap. HG_SOLVABLE is DERIVED from the ILP results, so on a fresh clone it
+# cannot exist yet: results/ is untracked, collect_ilp_solvable.sh has nothing to
+# read, and it would produce an empty set. Every ILP and exact-solver block would
+# then run on zero instances and report "nothing to do" -- indistinguishable from
+# a finished experiment.
+#
+# So until the subset has been built, fall back to the full set: before you know
+# which instances are solvable, the ILP has to be run on all of them. That is
+# exactly what collect_ilp_solvable.sh then reads to narrow the set for the
+# expensive solver comparisons.
+#
+# Only when the caller did NOT name a set. An explicit HG_SOLVABLE that is
+# missing is a typo, and silently measuring a different set than the one asked
+# for is worse than doing nothing.
+if _set_unusable "$HG_SOLVABLE" && [[ -z "$_HG_SOLVABLE_EXPLICIT" ]]; then
+  HG_SOLVABLE="$HG_FULL"
+  echo "experiments: note the ILP-solvable subset ($HG_SOLVABLE_DIR) has not been built yet;" >&2
+  echo "experiments:      the ILP / exact-solver blocks fall back to the full set." >&2
+  echo "experiments:      Once the ILP blocks have run, experiments/collect_ilp_solvable.sh" >&2
+  echo "experiments:      narrows it to what was actually solved to optimality." >&2
+fi
+
+# Anything still unusable is a real problem: `mapfile < <(ls DIR/*)` yields
+# nothing, every block reports "0/0 groups, nothing to do", and it looks like the
+# experiment ran. Say so instead of failing silently. Not fatal -- status.sh must
+# stay readable.
 for _set in HG_FULL HG_SOLVABLE; do
   _dir="${!_set}"
-  if [[ ! -d "$_dir" ]]; then
-    echo "experiments: WARNING $_set=$_dir does not exist -- every block over it will do nothing." >&2
-    [[ "$_set" == HG_SOLVABLE ]] && echo "experiments:          run experiments/collect_ilp_solvable.sh to build it." >&2
-  elif [[ -z "$(ls -A "$_dir" 2>/dev/null)" ]]; then
-    echo "experiments: WARNING $_set=$_dir is empty -- every block over it will do nothing." >&2
+  if _set_unusable "$_dir"; then
+    echo "experiments: WARNING $_set=$_dir is missing or empty -- every block over it will do nothing." >&2
   fi
 done
-unset _set _dir
+unset _set _dir _HG_SOLVABLE_EXPLICIT
 
 # ---- Experiment parameters ------------------------------------------------
 SEEDS=(1 21 203 1002)
