@@ -30,9 +30,9 @@ FAILURES="$RES/FAILURES.tsv"
 #
 # Narrowing the second set is an optional, later step, worth doing only when the
 # expensive solver comparisons would otherwise waste hours on instances no solver
-# finishes. experiments/collect_ilp_solvable.sh builds such a subset from the ILP
-# results and prints the one line needed to use it. Nothing is derived or
-# generated behind your back.
+# finishes. experiments/collect_solvable.sh builds such a subset from every
+# instance ANY solver proved optimal, and prints the one line needed to use it.
+# Nothing is derived or generated behind your back.
 #
 # Both are env-overridable, so a larger collection is one variable away:
 #   HG_FULL=~/test_instances/hypergraphs \

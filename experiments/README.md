@@ -91,7 +91,7 @@ The defaults are the hypergraphs **bundled with the repo**, and both sets are th
 | `HG_SOLVABLE` | `$HG_FULL` — the same folder | the ILP and exact-solver blocks |
 
 Everything runs on every instance. That is also the only correct starting point:
-which instances are ILP-solvable is not known until the ILP has been run on all
+which instances are solvable is not known until the solvers have been run on all
 of them. A fresh clone is just:
 
 ```bash
@@ -100,15 +100,25 @@ experiments/run_all.sh
 ```
 
 **Narrowing the second set is optional and manual.** It is worth doing once you
-have ILP results and the expensive solver comparisons would otherwise spend hours
-on instances no solver finishes. `collect_ilp_solvable.sh` builds a folder of
-symlinks to whatever the ILP tables prove optimal — it does *not* change what the
-pipeline reads, it prints the one line that does:
+have results and the expensive solver comparisons would otherwise spend hours on
+instances nothing finishes. `collect_solvable.sh` builds a folder of symlinks to
+every instance that **any** solver has proved optimal — the ILP variants, the
+graph-ILP after the KaMIS reductions, struction / vc_solver / satreduce, and the
+b-matching route, raw and reduced. One solver on one seed is enough: the point is
+to exclude what nothing can finish, not to prefer a particular solver.
+
+It does *not* change what the pipeline reads — it prints the one line that does:
 
 ```bash
-experiments/collect_ilp_solvable.sh
+experiments/collect_solvable.sh
 export HG_SOLVABLE=/path/it/printed
 ```
+
+Which tables count is discovered from their headers, so a new solver block is
+picked up as soon as it writes results. The `opt` column is located **by name**:
+the reduction tables are the same shape but mean something else (`gred.tsv` has
+the graph vertex count where the solver tables have `opt`), and they are skipped
+rather than misread.
 
 All three of `HG_FULL`, `HG_SOLVABLE` and `RES` are env-overridable, so pointing
 the pipeline at a larger collection — or at a scratch output dir for a trial run
@@ -198,5 +208,5 @@ exit_code  reason  stderr`.
 | `run_graph_solver_experiments.sh` | struction / vc_solver / satreduce (× raw/reduce) |
 | `status.sh` | read-only progress table |
 | `run_all.sh` | orchestrator (`--status`, `--only`, `--force`, `--yes`) |
-| `collect_ilp_solvable.sh` | optional: builds a symlink folder of the instances the ILP tables prove optimal, to point `HG_SOLVABLE` at |
+| `collect_solvable.sh` | optional: symlink folder of every instance ANY solver proved optimal, to point `HG_SOLVABLE` at |
 | `transpose_hgr.py` | hypergraph transpose, used by the b-matching duality |
