@@ -1,0 +1,117 @@
+% ============================================================================
+% Vendored preamble for the HyperMIS reproducibility document (main.tex).
+%
+% Self-contained snapshot of the packages and macros that the generated
+% figure/table fragments depend on, distilled from the paper's paper.tex,
+% defs.tex and tikz/tikzdefs.tex.  It lets THIS repository build every
+% generated artifact into a single PDF WITHOUT the paper checkout.
+%
+% It is NOT used by the paper (the paper has its own preamble).  If the
+% generated fragments start using a new macro, add it here to keep main.tex
+% building.  The plot colours are regenerated (write_plot_colors), everything
+% else here is static.
+% ============================================================================
+
+\usepackage[a4paper, margin=1.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+% --- tables -----------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{adjustbox}      % \resizebox around the wide tables
+\usepackage{pdflscape}      % landscape per-instance table (tab:overview)
+
+% --- math -------------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage{mathtools}
+
+% --- numbers ----------------------------------------------------------------
+\usepackage{siunitx}
+\sisetup{detect-weight=true, detect-inline-weight=math,
+         group-separator={\,}, group-minimum-digits=4}
+\usepackage{numprint}
+\npthousandsep{\,}
+\npdecimalsign{.}
+\usepackage{xstring}        % \IfStrEqCase inside \rname
+
+% --- references (\nameref is the \rname fallback) ---------------------------
+\usepackage{hyperref}
+
+% --- plots ------------------------------------------------------------------
+\usepackage{pgf}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{tikz}
+\usepgfplotslibrary{colorbrewer, statistics, groupplots}
+\usetikzlibrary{arrows.meta, positioning, tikzmark, calc, bending,
+                shadows, shapes, patterns}
+\pgfplotsset{compat=1.18}
+\usepackage{wasysym}        % timeout glyph in the performance profile
+
+% Generated plot colours c<name>, refreshed by write_plot_colors().
+\input{tikz/plotcolors.tex}
+
+% ============================================================================
+% Macros the fragments reference, copied from the paper's defs.tex.
+% ============================================================================
+\newcommand{\strong}{\textsc{R}}
+\newcommand{\strongeduced}{\strong{}educed}
+\newcommand{\ilp}{\textsc{ILP}}
+\newcommand{\ilpg}{\textsc{ILP$_G$}}
+\newcommand{\satAndReduce}{\textsc{SatAndReduce}}
+\newcommand{\weGotYouCovered}{\textsc{WeGotYouCovered}}
+\newcommand{\struction}{\textsc{Struction}}
+\newcommand{\cfg}[1]{\textsc{#1}}
+\newcommand{\bmatching}{\cfg{matching}}
+\newcommand{\rmode}[2][]{\strong$_{#2}^{#1}$}
+\newcommand{\tred}[1]{\ensuremath{t_{\strong_{#1}}^{\mathrm{red}}}}
+\newcommand{\ttot}[1]{\ensuremath{t_{\strong_{#1}}}}
+\newcommand{\red}[3][]{\strong$_{#2}^{#1}$-#3}
+\definecolor{lightgray}{rgb}{0.86,0.86,0.86}   % shaded rows in tab:overview
+% configuration name macros (\c... = solver, prefixed r/f/g variants = reduced)
+\newcommand{\cilp}{\ilp}
+\newcommand{\crilp}{\red{r}{\ilp}}
+\newcommand{\cnrilp}{\red{p}{\ilp}}
+\newcommand{\cfrilp}{\red{d}{\ilp}}
+\newcommand{\cgfilp}{\ilpg}
+\newcommand{\cgfrilp}[1][]{\red[#1]{d}{\ilpg}}
+\newcommand{\cgrilp}[1][]{\red[#1]{G}{\ilpg}}
+\newcommand{\cstruction}{\struction}
+\newcommand{\crstruction}[1][]{\red[#1]{d}{\struction}}
+\newcommand{\csatreduce}{\satAndReduce}
+\newcommand{\crsatreduce}[1][]{\red[#1]{d}{\satAndReduce}}
+\newcommand{\cvcsolver}{\weGotYouCovered}
+\newcommand{\crvcsolver}[1][]{\red[#1]{d}{\weGotYouCovered}}
+\newcommand{\cbmatching}{\bmatching}
+\newcommand{\crbmatching}[1][]{\red[#1]{d}{\bmatching}}
+
+% Revision markup (fragments usually do not use it, kept for completeness).
+\definecolor{revred}{rgb}{0.75,0.05,0.05}
+\newcommand{\rev}[1]{\textcolor{revred}{#1}}
+\newcommand{\revcolor}{\color{revred}}
+
+% Abbreviated rule names used in the tables.  In the paper these link to the
+% reduction definitions; standalone there is no Section 4 to link to, so
+% \redlink just typesets the short name (no undefined-reference warnings).
+\newcommand{\redlink}[2]{#2}
+\DeclareRobustCommand{\rname}[1]{%
+  \IfStrEqCase{#1}{%
+    {edgesizereduction}{\redlink{#1}{Edge Size}}%
+    {degree-one}{\redlink{#1}{Degree-One}}%
+    {edgedomreduction}{\redlink{#1}{F.\,Edge Dom.}}%
+    {fastdomination}{\redlink{#1}{F.\,Vertex Dom.}}%
+    {vertexdomination}{\redlink{#1}{Vertex Dom.}}%
+    {twinreduction}{\redlink{#1}{Twins}}%
+    {unconfinedreduction}{\redlink{#1}{Unconfined}}%
+    {edgedominationgeneral}{\redlink{#1}{Edge Dom.}}%
+  }[\texttt{#1}]%
+}
