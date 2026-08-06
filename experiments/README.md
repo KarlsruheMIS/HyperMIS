@@ -92,7 +92,21 @@ out of the box:
 
 `HG_SOLVABLE` is **generated** — a folder of symlinks built by
 `collect_ilp_solvable.sh` from whatever the ILP tables currently prove optimal.
-Run it once before the ILP blocks; it is `.gitignore`d.
+It is `.gitignore`d, so on a fresh clone it does not exist yet. Until it is
+built, the ILP blocks **fall back to the full set**, which is the correct
+bootstrap: before you know which instances are solvable, the ILP has to be run
+on all of them. The order on a fresh clone is therefore:
+
+```bash
+mkdir build && cd build && cmake .. && make && cd ..   # binaries
+experiments/run_experiment.sh                          # ILP over the full set
+experiments/collect_ilp_solvable.sh                    # narrow to what solved
+experiments/run_all.sh                                 # the rest
+```
+
+The fallback applies only when you did not name a set yourself; an explicit
+`HG_SOLVABLE` that is missing stays an error, since silently measuring a
+different set than the one asked for is worse than doing nothing.
 
 All three of `HG_FULL`, `HG_SOLVABLE` and `RES` are env-overridable, so pointing
 the pipeline at a larger collection — or at a scratch output dir for a trial run
@@ -108,6 +122,21 @@ RES=/tmp/trial experiments/run_experiment.sh     # write elsewhere, keep results
 
 A missing or empty instance dir is reported at startup: otherwise every block
 over it silently reports "0/0 groups, nothing to do" and looks like it ran.
+
+### External solvers
+
+`struction`, `vc_solver`, `vc-bnb` and `bmatching_cli` are separate projects; the
+defaults assume they are checked out next to this repo, which a clone elsewhere
+will not be. Missing ones are listed at startup — a solver that is absent would
+otherwise surface as one "command not found" failure per (instance, seed),
+looking like a crash rather than a missing install. Override the ones you have:
+
+```bash
+STRUCTION=/path/to/struction VC=/path/to/vc_solver \
+  experiments/run_graph_solver_experiments.sh
+```
+
+Only their own comparison blocks depend on them; reductions and ILP do not.
 
 - **`MEM_LIMIT`** (default empty = no cap). Set e.g. `MEM_LIMIT=200G` for the
   machine you run on. Each job that exceeds it is killed and its outcome recorded

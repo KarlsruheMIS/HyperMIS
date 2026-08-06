@@ -122,19 +122,44 @@ export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 MEM_LIMIT="${MEM_LIMIT:-32G}"
 
 # ---- Binaries -------------------------------------------------------------
-BUILD="$REPO_DIR/build"
+BUILD="${BUILD:-$REPO_DIR/build}"
 RUN_REDUCE="$BUILD/run_reduce"
 RUN_ILP="$BUILD/run_ilp"
 HG2G="$BUILD/hypergraph_to_graph"
 GRC="$BUILD/graph_reduction_comparison"
 CLIQUE_BLOWUP="$BUILD/clique_blowup"
-
-# External comparison solvers.
-STRUCTION="$REPO_DIR/../KaMIS/deploy/struction"
-VC="$REPO_DIR/../WeGotYouCovered/optimized/vc_solver"
-SATREDUCE="$REPO_DIR/../vc-satreduce/build/vc-bnb"
-BM="$REPO_DIR/../Bmatching/build/app/bmatching_cli"
 TRANSPOSE="$EXP_DIR/transpose_hgr.py"
+
+# External comparison solvers -- separate projects, so these are only a guess at
+# where they sit relative to this repo (they are checked out side by side here).
+# A clone anywhere else will not find them; override the ones you have.
+STRUCTION="${STRUCTION:-$REPO_DIR/../KaMIS/deploy/struction}"
+VC="${VC:-$REPO_DIR/../WeGotYouCovered/optimized/vc_solver}"
+SATREDUCE="${SATREDUCE:-$REPO_DIR/../vc-satreduce/build/vc-bnb}"
+BM="${BM:-$REPO_DIR/../Bmatching/build/app/bmatching_cli}"
+
+# Report missing binaries once, at startup. Otherwise a missing solver surfaces
+# as one "command not found" failure per (instance, seed) -- 8 identical error
+# rows in FAILURES.tsv that look like the solver crashed rather than like it was
+# never installed. Our own binaries are a hard error (nothing runs without them);
+# the external ones only disable their own comparison blocks.
+_missing_own=() _missing_ext=()
+for _b in RUN_REDUCE RUN_ILP HG2G GRC CLIQUE_BLOWUP; do
+  [[ -x "${!_b}" ]] || _missing_own+=("$_b=${!_b}")
+done
+for _b in STRUCTION VC SATREDUCE BM; do
+  [[ -x "${!_b}" ]] || _missing_ext+=("$_b=${!_b}")
+done
+if (( ${#_missing_own[@]} )); then
+  echo "experiments: WARNING these HyperMIS binaries are missing -- build first (mkdir build && cd build && cmake .. && make):" >&2
+  printf 'experiments:          %s\n' "${_missing_own[@]}" >&2
+fi
+if (( ${#_missing_ext[@]} )); then
+  echo "experiments: note these external solvers are not installed here; their comparison" >&2
+  echo "experiments:      blocks will fail. Set the variable to override, or skip the block." >&2
+  printf 'experiments:          %s\n' "${_missing_ext[@]}" >&2
+fi
+unset _b _missing_own _missing_ext
 
 export GUROBI_HOME="${GUROBI_HOME:-/home/ernestineg/gurobi/gurobi1203/linux64}"
 
