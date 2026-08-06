@@ -1,17 +1,19 @@
 #!/bin/bash
 #
-# Collect every instance that is provably solvable by at least one ILP method
-# (opt==1 in any ILP result) into a dedicated folder of symlinks.
+# OPTIONAL. Collect every instance provably solvable by at least one ILP method
+# (opt==1 in any ILP result) into a folder of symlinks.
 #
-# This is the set every ILP / exact-solver block in this directory runs on --
-# HG_SOLVABLE in config.sh (run_experiment.sh's ILP blocks,
-# run_graph_reduction_comparison.sh's grilp, run_graph_solver_experiments.sh and
-# run_bmatching_experiments.sh). The reduction blocks keep running on the FULL
-# set, HG_FULL.
+# By default HG_SOLVABLE *is* HG_FULL -- the ILP and exact-solver blocks run on
+# every instance, which is the only correct starting point, since which instances
+# are solvable is not known until the ILP has been run on all of them.
 #
-# Paths come from config.sh, so the folder this writes is by construction the
-# one the pipeline reads. Re-run whenever the ILP results change; it rebuilds
-# the folder from scratch.
+# Narrowing is worth it once you have those results and the expensive solver
+# comparisons (struction / vc_solver / satreduce / b-matching) would otherwise
+# spend hours on instances no solver finishes. This script builds that subset;
+# it does NOT change what the pipeline reads. It prints the one line that does.
+#
+# Re-run whenever the ILP results change: it rebuilds the folder from scratch.
+# Override the destination with SOLVABLE_DIR=/some/path.
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,9 +21,9 @@ source "$HERE/config.sh"
 
 res="$RES"
 hypergraphs="$HG_FULL"
-# HG_SOLVABLE_DIR, not HG_SOLVABLE: the latter falls back to HG_FULL while the
-# subset does not exist yet, and this script must never be aimed at the full set.
-dest="$HG_SOLVABLE_DIR"
+# Its own variable, never HG_SOLVABLE: that one defaults to HG_FULL, and this
+# script must never be aimed at the full set (it starts by deleting its target).
+dest="${SOLVABLE_DIR:-$REPO_DIR/hypergraphs_ilp_solvable}"
 
 # ILP result files with the "graph algo size time opt seed mem" schema (opt = col 5).
 # grilp.tsv is EXCLUDED: it comes from graph_reduction_comparison and has no opt column.
@@ -50,9 +52,9 @@ done
 # would replace a good subset with one that silently disables every ILP block.
 if [ ${#existing[@]} -eq 0 ]; then
   echo "ERROR: no ILP result files under $res/ILP -- nothing to derive the subset from." >&2
-  echo "       Run the ILP blocks first: experiments/run_experiment.sh" >&2
-  echo "       (until then the ILP blocks fall back to the full set, which is what" >&2
-  echo "        produces the results this script reads)." >&2
+  echo "       Run the ILP blocks over the full set first:" >&2
+  echo "         experiments/run_experiment.sh" >&2
+  echo "       That is what produces the results this script reads." >&2
   exit 1
 fi
 
@@ -67,18 +69,18 @@ fi
 
 # This script rebuilds $dest from scratch, so it starts with `rm -rf`. That is
 # safe only for a directory it owns -- a folder of symlinks it created itself.
-# HG_SOLVABLE now defaults INSIDE the repo, next to the real instances, so guard
-# it: refuse to touch the full set, and refuse any directory holding a regular
-# file. Deleting the bundled hypergraphs/ because of a mistyped override would be
-# unrecoverable for anything not tracked in git.
+# The default destination sits INSIDE the repo, next to the real instances, so
+# guard it: refuse to touch the full set, and refuse any directory holding a
+# regular file. Deleting the bundled hypergraphs/ because of a mistyped
+# SOLVABLE_DIR would be unrecoverable for anything not tracked in git.
 if [ "$dest_abs" = "$hg_abs" ]; then
-  echo "ERROR: HG_SOLVABLE and HG_FULL are the same directory ($dest_abs)." >&2
-  echo "       The solvable subset must be its own folder; refusing to delete the full set." >&2
+  echo "ERROR: SOLVABLE_DIR and HG_FULL are the same directory ($dest_abs)." >&2
+  echo "       The subset must be its own folder; refusing to delete the full set." >&2
   exit 1
 fi
 if [ -d "$dest_abs" ] && find "$dest_abs" -maxdepth 1 -type f -print -quit | grep -q .; then
   echo "ERROR: $dest_abs holds regular files, not just the symlinks this script creates." >&2
-  echo "       Refusing to 'rm -rf' it. Move it aside or point HG_SOLVABLE elsewhere." >&2
+  echo "       Refusing to 'rm -rf' it. Move it aside or set SOLVABLE_DIR elsewhere." >&2
   exit 1
 fi
 
@@ -111,4 +113,9 @@ fi
 
 echo "ILP-solvable instances collected: $count  (missing: $missing)"
 echo "  full set:     $hg_abs  ($(ls "$hg_abs" | wc -l) instances)"
-echo "  solvable set: $dest_abs  ($count instances)"
+echo "  subset:       $dest_abs  ($count instances)"
+echo
+echo "Nothing changed yet -- the pipeline still runs on the full set. To use this"
+echo "subset for the ILP / exact-solver blocks:"
+echo
+echo "  export HG_SOLVABLE=$dest_abs"

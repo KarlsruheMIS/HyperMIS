@@ -82,31 +82,33 @@ machine is hard-coded.
 
 ### Instance sets
 
-The defaults are the hypergraphs **bundled with the repo**, so a fresh clone runs
-out of the box:
+The defaults are the hypergraphs **bundled with the repo**, and both sets are the
+**same folder**, so a fresh clone runs out of the box with nothing to generate:
 
 | variable | default | used by |
 |----------|---------|---------|
 | `HG_FULL` | `hypergraphs/` | the reduction blocks |
-| `HG_SOLVABLE` | `hypergraphs_ilp_solvable/` | the ILP and exact-solver blocks |
+| `HG_SOLVABLE` | `$HG_FULL` — the same folder | the ILP and exact-solver blocks |
 
-`HG_SOLVABLE` is **generated** — a folder of symlinks built by
-`collect_ilp_solvable.sh` from whatever the ILP tables currently prove optimal.
-It is `.gitignore`d, so on a fresh clone it does not exist yet. Until it is
-built, the ILP blocks **fall back to the full set**, which is the correct
-bootstrap: before you know which instances are solvable, the ILP has to be run
-on all of them. The order on a fresh clone is therefore:
+Everything runs on every instance. That is also the only correct starting point:
+which instances are ILP-solvable is not known until the ILP has been run on all
+of them. A fresh clone is just:
 
 ```bash
-mkdir build && cd build && cmake .. && make && cd ..   # binaries
-experiments/run_experiment.sh                          # ILP over the full set
-experiments/collect_ilp_solvable.sh                    # narrow to what solved
-experiments/run_all.sh                                 # the rest
+mkdir build && cd build && cmake .. && make && cd ..
+experiments/run_all.sh
 ```
 
-The fallback applies only when you did not name a set yourself; an explicit
-`HG_SOLVABLE` that is missing stays an error, since silently measuring a
-different set than the one asked for is worse than doing nothing.
+**Narrowing the second set is optional and manual.** It is worth doing once you
+have ILP results and the expensive solver comparisons would otherwise spend hours
+on instances no solver finishes. `collect_ilp_solvable.sh` builds a folder of
+symlinks to whatever the ILP tables prove optimal — it does *not* change what the
+pipeline reads, it prints the one line that does:
+
+```bash
+experiments/collect_ilp_solvable.sh
+export HG_SOLVABLE=/path/it/printed
+```
 
 All three of `HG_FULL`, `HG_SOLVABLE` and `RES` are env-overridable, so pointing
 the pipeline at a larger collection — or at a scratch output dir for a trial run
@@ -196,5 +198,5 @@ exit_code  reason  stderr`.
 | `run_graph_solver_experiments.sh` | struction / vc_solver / satreduce (× raw/reduce) |
 | `status.sh` | read-only progress table |
 | `run_all.sh` | orchestrator (`--status`, `--only`, `--force`, `--yes`) |
-| `collect_ilp_solvable.sh` | **before** the ILP blocks: rebuilds `HG_SOLVABLE` from whatever the ILP tables currently prove optimal |
+| `collect_ilp_solvable.sh` | optional: builds a symlink folder of the instances the ILP tables prove optimal, to point `HG_SOLVABLE` at |
 | `transpose_hgr.py` | hypergraph transpose, used by the b-matching duality |

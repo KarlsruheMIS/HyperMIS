@@ -108,7 +108,7 @@ experiments/run_all.sh            # run everything still missing
 ```
 The whole experimental pipeline lives in [`experiments/`](experiments/README.md): reductions, ILP, the graph-reduction baseline, external graph solvers and the b-matching comparison. Every run is resumable, CPU-pinned for trustworthy timings, and records failures in `results/FAILURES.tsv`. Results land as TSV under `results/`.
 
-By default it runs on the instances bundled in [`hypergraphs/`](hypergraphs/). The ILP and exact-solver blocks run on the subset proven solvable to optimality, which `experiments/collect_ilp_solvable.sh` builds. Point the pipeline at your own collection with `HG_FULL` / `HG_SOLVABLE`; seeds, time budgets and binary paths live in `experiments/config.sh`.
+By default every block runs on the instances bundled in [`hypergraphs/`](hypergraphs/), so a fresh clone works with nothing else installed. Point the pipeline at your own collection with `HG_FULL` / `HG_SOLVABLE`; seeds, time budgets and binary paths live in `experiments/config.sh`.
 
 ## Input Format
 

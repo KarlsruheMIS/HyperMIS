@@ -21,60 +21,36 @@ FAILURES="$RES/FAILURES.tsv"
 # Instance sets. The defaults are the hypergraphs shipped WITH the repo, so the
 # pipeline runs out of the box on a fresh clone with nothing else installed.
 #
-#   HG_FULL      full set   -- the reduction blocks run on this
-#   HG_SOLVABLE  subset     -- the exact solvers / ILP blocks run on this; built
-#                             from HG_FULL by collect_ilp_solvable.sh (symlinks)
+#   HG_FULL      the reduction blocks run on this
+#   HG_SOLVABLE  the ILP / exact-solver blocks run on this
+#
+# BOTH DEFAULT TO THE SAME FOLDER: everything runs on every instance. That is
+# also the only correct starting point, since which instances are ILP-solvable is
+# not known until the ILP has been run on all of them.
+#
+# Narrowing the second set is an optional, later step, worth doing only when the
+# expensive solver comparisons would otherwise waste hours on instances no solver
+# finishes. experiments/collect_ilp_solvable.sh builds such a subset from the ILP
+# results and prints the one line needed to use it. Nothing is derived or
+# generated behind your back.
 #
 # Both are env-overridable, so a larger collection is one variable away:
 #   HG_FULL=~/test_instances/hypergraphs \
 #   HG_SOLVABLE=~/test_instances/hypergraphs_ilp_solvable experiments/run_all.sh
 HG_FULL="${HG_FULL:-$REPO_DIR/hypergraphs}"
+HG_SOLVABLE="${HG_SOLVABLE:-$HG_FULL}"
 
-# Did the caller name a solvable set explicitly? Decides whether a missing one is
-# a bootstrap situation (fall back) or a mistake (warn) -- see below.
-_HG_SOLVABLE_EXPLICIT=${HG_SOLVABLE:+1}
-# Where collect_ilp_solvable.sh WRITES the subset. Distinct from HG_SOLVABLE
-# because that may fall back to HG_FULL below, and the generator must never be
-# aimed at the full set.
-HG_SOLVABLE_DIR="${HG_SOLVABLE:-$REPO_DIR/hypergraphs_ilp_solvable}"
-HG_SOLVABLE="$HG_SOLVABLE_DIR"
-
-# True when a directory is absent or holds nothing.
-_set_unusable() { [[ ! -d "$1" || -z "$(ls -A "$1" 2>/dev/null)" ]]; }
-
-# Bootstrap. HG_SOLVABLE is DERIVED from the ILP results, so on a fresh clone it
-# cannot exist yet: results/ is untracked, collect_ilp_solvable.sh has nothing to
-# read, and it would produce an empty set. Every ILP and exact-solver block would
-# then run on zero instances and report "nothing to do" -- indistinguishable from
-# a finished experiment.
-#
-# So until the subset has been built, fall back to the full set: before you know
-# which instances are solvable, the ILP has to be run on all of them. That is
-# exactly what collect_ilp_solvable.sh then reads to narrow the set for the
-# expensive solver comparisons.
-#
-# Only when the caller did NOT name a set. An explicit HG_SOLVABLE that is
-# missing is a typo, and silently measuring a different set than the one asked
-# for is worse than doing nothing.
-if _set_unusable "$HG_SOLVABLE" && [[ -z "$_HG_SOLVABLE_EXPLICIT" ]]; then
-  HG_SOLVABLE="$HG_FULL"
-  echo "experiments: note the ILP-solvable subset ($HG_SOLVABLE_DIR) has not been built yet;" >&2
-  echo "experiments:      the ILP / exact-solver blocks fall back to the full set." >&2
-  echo "experiments:      Once the ILP blocks have run, experiments/collect_ilp_solvable.sh" >&2
-  echo "experiments:      narrows it to what was actually solved to optimality." >&2
-fi
-
-# Anything still unusable is a real problem: `mapfile < <(ls DIR/*)` yields
-# nothing, every block reports "0/0 groups, nothing to do", and it looks like the
-# experiment ran. Say so instead of failing silently. Not fatal -- status.sh must
-# stay readable.
+# A missing or empty set is otherwise a silent no-op: `mapfile < <(ls DIR/*)`
+# yields nothing, every block reports "0/0 groups, nothing to do", and it looks
+# like the experiment ran. Say so instead. Not fatal -- status.sh must stay
+# readable whatever the configuration.
 for _set in HG_FULL HG_SOLVABLE; do
   _dir="${!_set}"
-  if _set_unusable "$_dir"; then
+  if [[ ! -d "$_dir" || -z "$(ls -A "$_dir" 2>/dev/null)" ]]; then
     echo "experiments: WARNING $_set=$_dir is missing or empty -- every block over it will do nothing." >&2
   fi
 done
-unset _set _dir _HG_SOLVABLE_EXPLICIT
+unset _set _dir
 
 # ---- Experiment parameters ------------------------------------------------
 SEEDS=(1 21 203 1002)
