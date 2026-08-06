@@ -103,9 +103,12 @@ instance_name,seed,#reduced_vertices,#reduced_edges,time,reduction_name
 
 ### Run benchmarks
 ```bash
-./run_experiment.sh
+experiments/run_all.sh --status   # what is done / missing / failed
+experiments/run_all.sh            # run everything still missing
 ```
-This runs the code on instances in the `hypergraphs/` folder and stores results in a CSV file.
+The whole experimental pipeline lives in [`experiments/`](experiments/README.md): reductions, ILP, the graph-reduction baseline, external graph solvers and the b-matching comparison. Every run is resumable, CPU-pinned for trustworthy timings, and records failures in `results/FAILURES.tsv`. Results land as TSV under `results/`.
+
+By default it runs on the instances bundled in [`hypergraphs/`](hypergraphs/). The ILP and exact-solver blocks run on the subset proven solvable to optimality, which `experiments/collect_ilp_solvable.sh` builds. Point the pipeline at your own collection with `HG_FULL` / `HG_SOLVABLE`; seeds, time budgets and binary paths live in `experiments/config.sh`.
 
 ## Input Format
 
