@@ -11,28 +11,17 @@ Two data sources in results/RED/:
     for the ABLATION table (each rule alone vs. all-rules-except-this) and the
     size-vs-time figure.
 
-  stats.tsv         full-pipeline (all rules, = reduce9) per-rule breakdown.
+  stats.tsv         full-pipeline (all rules) per-rule breakdown.
     Columns: graph seed red_n red_m time reduction
     where red_n/red_m are #nodes/#edges removed BY that rule and time the time
     spent in it.  Used for the CONTRIBUTION table + scatters.  NOTE: it does not
     record incidences, so a per-rule *pipeline* size (m*e) share cannot be built
     from it -- the size-vs-time figure uses the single-rule configs instead.
 
-reduceX mapping (src/MIS_algorithm.cpp).  The configs are numbered in
-full-pipeline application order, so config k is the k-th rule alone and config
-9+k is the full pipeline without it:
-    only:     1 edge_size  2 node_degree_one  3 edge_dom    4 simplicial
-              5 fast_node_dom  6 node_dom     7 twin        8 unconfined
-    all:      9
-    disable: 10 edge_size 11 node_degree_one 12 edge_dom   13 simplicial
-             14 fast_node_dom 15 node_dom    16 twin       17 unconfined
-Unlike in earlier runs, a single-rule config is exactly that rule -- there is no
-extra base rule underneath it.
-
-NOTE: edge_domination moved from slot 5 to slot 3 (ahead of simplicial and
-fast_node_domination), which renumbered configs 3/4/5 and 12/13/14.  Result
-files produced before that change use the OLD numbering and will be mislabelled
-by this script -- regenerate config_stats.tsv rather than mixing the two.
+reduceX mapping (src/MIS_algorithm.cpp): the seven rules are numbered in
+full-pipeline application order.  Config k (1-7) applies the k-th rule alone,
+config 8 is the full pipeline, and config 8+k drops the k-th rule. See the
+ABLATION table below for the rule-to-config layout.
 
 Output (paper fragment): tables/ablation.tex, the ablation and the pipeline
 contribution in one table.
@@ -57,9 +46,8 @@ RED_TIME_SHIFT = 0.01
 # Ablation: (plain rule name, only-config, disable-config); the display name is
 # derived from the rule via rule_ref() so it matches Section 4.
 #
-# Config layout matches src/MIS_algorithm.cpp with simplicial FULLY REMOVED, so
-# the sweep is 15 configs numbered contiguously in full-pipeline application
-# order (no gap where simplicial used to sit):
+# Config layout matches src/MIS_algorithm.cpp: 15 configs numbered contiguously
+# in full-pipeline application order:
 #   Singles  1-7 : one rule alone
 #     1 edge_size, 2 node_degree_one, 3 edge_domination, 4 fast_node_domination,
 #     5 node_domination, 6 twin, 7 unconfined
@@ -83,11 +71,11 @@ ALL_CONFIG = "reduce8"
 # Full-pipeline rules as they appear in stats.tsv (application order).
 PIPELINE_ORDER = [rule for rule, _, _ in ABLATION]
 
-# Reduction-name aliases: older result files emit the historical token; map them
-# to the current canonical name so old and new runs aggregate into one row.
+# Reduction-name aliases: some result files spell a rule with an alternate token;
+# map it to the canonical name so every run aggregates into one row.
 REDUCTION_ALIASES = {
     "sunflower": "fast_node_domination",
-    "edge_degree_one": "edge_size",  # size-one rule before the spanning cases
+    "edge_degree_one": "edge_size",  # size-one edge rule, folded into edge_size
 }
 
 
@@ -356,7 +344,7 @@ def ablation_table(cfg, contrib, by_inst, n_inst):
     \\midrule
 {body}
     \\midrule
-    \\emph{{all rules}} & {_unc(an)} & {_timex(at)} & \\multicolumn{{2}}{{c}}{{0}} & {{0}} & {{100}} & {{100}} & {all_tpe} \\\\
+    \\emph{{all rules}} & {_unc(an)} & {_timex(at)} & 0 & & 0 & 100.00 & 100.00 & {all_tpe} \\\\
     \\bottomrule
   \\end{{tabular}}}}
 \\end{{table*}}"""

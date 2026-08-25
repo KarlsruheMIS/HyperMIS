@@ -24,7 +24,7 @@ Part of the [KarlsruheMIS](https://github.com/KarlsruheMIS) organization.
 
 ## Description
 
-Given a hypergraph $H = (V, \mathcal{E})$, a **strong independent set** is a subset $S \subseteq V$ such that each hyperedge contains **at most one** vertex from $S$. Finding a maximum strong independent set is NP-hard. HyperMIS provides an ILP-based exact solver with data reduction preprocessing that shrinks instances to approximately 22% of their original size, achieving average speedups of 3.84&times; and up to 53&times; on real-world instances.
+Given a hypergraph $H = (V, \mathcal{E})$, a **strong independent set** is a subset $S \subseteq V$ such that each hyperedge contains **at most one** vertex from $S$. Finding a maximum strong independent set is NP-hard. HyperMIS provides an ILP-based exact solver with data reduction preprocessing that shrinks instances to about 18% of their original size in roughly a second, letting subsequent solvers reach instances that are otherwise out of reach. With our preprocessing the best-performing solver becomes 8.14&times; faster and solves 16 additional instances; for solvers that suffer most from clique expansion we measure speedups of up to 17.22&times; together with up to 13.18&times; less peak memory.
 
 The solver implements seven reduction rules &mdash; edge size, degree one, edge domination, fast node domination, node domination, twin, and unconfined &mdash; as a preprocessing step for any solver. Applications include constructing **perfect minimal hash functions** and other combinatorial optimization tasks on hypergraphs.
 
@@ -156,4 +156,28 @@ If you publish results using our algorithms, please acknowledge our work by citi
   year      = {2026},
   url       = {https://arxiv.org/abs/2602.10781}
 }
+```
+
+## Reproducing the Paper
+
+The tables and figures in the paper are generated from the raw `results/*.tsv`
+files by a small Python pipeline (Python 3, no third-party packages). The raw
+results are committed, so the figures can be rebuilt without rerunning any
+experiment.
+
+```bash
+# 1. Regenerate every table/figure fragment from results/ into latex/
+python3 make_all_paper.py
+
+# 2. Build the standalone document with all tables and figures
+cd latex && latexmk -pdf main.tex
+```
+
+`make_all_paper.py` runs each `make_*.py` generator and writes the LaTeX
+fragments (plus the reproducibility document `latex/main.tex`) into the repo's
+`latex/` tree; see [`latex/README.md`](latex/README.md) for details. To emit the
+fragments straight into a paper checkout instead, set `PAPER_ROOT`:
+
+```bash
+PAPER_ROOT=/path/to/paper python3 make_all_paper.py
 ```

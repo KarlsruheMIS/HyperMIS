@@ -286,9 +286,11 @@ def main():
                     [mvals[base][g] / KB_PER_MB for g in common], MEM_SHIFT)
                 mr = shifted_geomean(
                     [mvals[redm][g] / KB_PER_MB for g in common], MEM_SHIFT)
-                # Gain: instances the reduction makes solvable that the unreduced
-                # solver cannot (a with/without-reduction benefit).
-                rec["gained"] = len(set(tvals[redm]) - set(tvals[base]))
+                # Gain: the net change in the number of solvable instances the
+                # reduction brings -- instances it newly solves minus any it makes
+                # unsolvable (e.g. a heavier reduction pushing the solve past the
+                # time/memory limit).  Equivalently solved(reduced) - solved(base).
+                rec["gained"] = len(tvals[redm]) - len(tvals[base])
                 rec.update({"t": tr, "m": mr,
                             "speedup": tb / tr, "factor": mb / mr})
         rows.append(rec)
@@ -412,7 +414,7 @@ def main():
     \\emph{{$t$ all}}, the run time over all instances with unsolved ones penalised
     at the ${tl:.0f}$\\,s limit.
     \\emph{{Reduction gain}} compares each solver with and without our reductions.
-    This includes the number of instances solvable due to reductions
+    This includes the difference in number of solvable instances due to reductions
     (\\emph{{\\#solved}}), \\emph{{speedup}} and \\emph{{memory}} giving run time and
     peak-memory improvement factors on instances each method solves both ways. The
     mutually solved set differs per row, so these three columns are not comparable

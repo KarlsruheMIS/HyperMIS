@@ -646,6 +646,15 @@ LEGEND_ABOVE = legend_above()
 # information and box the data in.
 AXIS_OPEN = "axis lines=left, tick align=outside"
 
+# Shared y-tick-label gutter for the four solverplots panels (perf profiles +
+# cactus).  Each panel's `width` includes its y-tick labels, so the wide log
+# labels of the cactus panels (10^{-2}) would otherwise push their axis box
+# further right than the perf-profile panels' short linear labels (0.2), leaving
+# the top and bottom x-axes misaligned.  Reserving one fixed-width, right-aligned
+# gutter sized for the widest label makes all four boxes -- and their x-axes --
+# line up.  Only these panels use it, so the single neighborhood plot is untouched.
+PANEL_YTICK = "yticklabel style={text width=2.3em, align=right}"
+
 
 # Reduction-rule identifier (as used in the result files) -> the \label of the
 # corresponding Reduction environment in sec/data_reductions.tex.  Generated
@@ -654,12 +663,12 @@ AXIS_OPEN = "axis lines=left, tick align=outside"
 # the paper's wording (e.g. "node_domination" is "Vertex Domination").
 RULE_REDUCTION = {
     "edge_size": "edgesizereduction",
-    "edge_degree_one": "edgesizereduction",  # historical token, now folded in
+    "edge_degree_one": "edgesizereduction",  # alternate token, folded into edge size
     "node_degree_one": "degree-one",
     "degree_one": "degree-one",
     "simplicial": "simplicialreduction",
     "fast_node_domination": "fastdomination",
-    "sunflower": "fastdomination",  # historical token in older result files
+    "sunflower": "fastdomination",  # alternate token for fast node domination
     "edge_domination": "edgedomreduction",
     "node_domination": "vertexdomination",
     "twin": "twinreduction",
@@ -732,8 +741,8 @@ _REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 REPO_LATEX_ROOT = os.path.join(_REPO_ROOT, "latex")
 PAPER_ROOT = os.environ.get("PAPER_ROOT", REPO_LATEX_ROOT)
 
-# When set, keep writing the old standalone \documentclass preview documents
-# (into results/) for a quick local pdflatex check, instead of bare fragments.
+# When set, write standalone \documentclass preview documents (into results/)
+# for a quick local pdflatex check instead of bare fragments.
 PAPER_PREVIEW = bool(os.environ.get("PAPER_PREVIEW"))
 
 # Canonical colour lists as (names, palette) pairs.  Every script's fragment
@@ -744,7 +753,6 @@ PAPER_PREVIEW = bool(os.environ.get("PAPER_PREVIEW"))
 # positional DARK2 mapping.
 COLOR_LISTS = [
     (["Time"], DARK2),                                 # reduction_tables (tpe box)
-    (["nored", "red", "tie"], DARK2),                  # reduction_comparison
     (["recompute", "precompute", "ondemand"], DARK2),  # neighborhood_memory
     (ALL_ILP_CONFIGS, CONFIG_COLORS),                  # perf profiles, cactus, solving
 ]

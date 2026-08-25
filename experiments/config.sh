@@ -91,7 +91,7 @@ PIN_USE_SMT="${PIN_USE_SMT:-0}"   # ccx mode: also put the SMT siblings in the m
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
        NUMEXPR_NUM_THREADS=1 OMP_PROC_BIND=false
 
-# Per-job memory cap for the TARGET machine. EMPTY = no cap (default).
+# Per-job memory cap for the TARGET machine. Default 32G; set EMPTY for no cap.
 # Example: MEM_LIMIT=200G  -> any single job exceeding 200 GiB is killed and
 # recorded as an OOM result line. The enforcement mechanism (systemd-run cgroup
 # cap, or prlimit) is auto-detected at runtime by lib.sh:init_mem.

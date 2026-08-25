@@ -19,7 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
-    AXIS_OPEN, cfg_macro, color_name, ILP_METHODS, config_mark_style, LEGEND_COLUMNS, data_path,
+    cfg_macro, color_name, ILP_METHODS, config_mark_style, LEGEND_COLUMNS, data_path,
     legend_filler, legend_plot_order, legend_to_name,
 )
 
@@ -68,11 +68,15 @@ def write_dat(metric, method, pts):
     return path
 
 
-def make_panel(metric, axis_label, methods, collect_legend, key, width):
-    """One performance-profile panel (bare tikzpicture, no float, no caption).
+def make_panel(metric, axis_label, methods, collect_legend, key):
+    """One performance-profile panel as a ``\\nextgroupplot`` block for the shared
+    2x2 groupplot assembled in make_solver_plots.
 
-    The time and memory profiles show the same set of methods, so only the first
-    panel collects the legend; it is typeset once, centred above both.
+    Only the panel-specific options live here (scale, limits, labels, legend);
+    the common size/style/`scale only axis` sit on the group, which is what keeps
+    the four axis boxes -- and their x-axes -- exactly aligned.  The time and
+    memory profiles show the same methods, so only the first panel collects the
+    legend; it is typeset once, centred above the grid.
     """
     plots = []
     # Legend order, not file order, with a blank cell wherever a variant does not
@@ -99,20 +103,14 @@ def make_panel(metric, axis_label, methods, collect_legend, key, width):
     # unreduced on the first row, reduced below it, third variant below that.
     legend_opts = (legend_to_name(key, columns=LEGEND_COLUMNS) if collect_legend
                    else "legend style={draw=none}")
-    return f"""  \\begin{{tikzpicture}}
-    \\begin{{axis}}[
-      width={width}, height=0.32\\linewidth,
+    return f"""    \\nextgroupplot[
       xmode=log, log basis x=2,
       xmin=1, ymin=0, ymax=1.02,
       xlabel={{$\\tau$ (factor from best {axis_label})}},
       ylabel={{fraction of instances}},
       legend cell align=left, {legend_opts},
-      label style={{font=\\small}}, tick label style={{font=\\small}},
-      grid=both, grid style={{gray!20}}, {AXIS_OPEN},
     ]
-{body}
-    \\end{{axis}}
-  \\end{{tikzpicture}}"""
+{body}"""
 
 
 # This module is a PANEL LIBRARY for make_solver_plots.py, which assembles the

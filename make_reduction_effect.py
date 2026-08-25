@@ -218,7 +218,7 @@ def main():
     ]
     emit_fragment(tab_path("reduction_effect.tex"), "\n".join(body))
 
-    # --- prose numbers for sec/exp_reductions.tex (aggregation unchanged) ---
+    # --- prose numbers for sec/exp_reductions.tex ---
     def col(key):
         return [float(r[key]) for r in rows]
     n, m, e = col("n"), col("m"), col("e")

@@ -150,8 +150,8 @@ STRUCTION=/path/to/struction VC=/path/to/vc_solver \
 
 Only their own comparison blocks depend on them; reductions and ILP do not.
 
-- **`MEM_LIMIT`** (default empty = no cap). Set e.g. `MEM_LIMIT=200G` for the
-  machine you run on. Each job that exceeds it is killed and its outcome recorded
+- **`MEM_LIMIT`** (default `32G`; set empty for no cap). Set e.g. `MEM_LIMIT=200G`
+  for the machine you run on. Each job that exceeds it is killed and its outcome recorded
   (see below). The enforcement mechanism is auto-detected at startup:
   `systemd-run --user --scope` (clean cgroup-v2 OOM signal) if available, else
   `prlimit --as`, else uncapped with a warning.

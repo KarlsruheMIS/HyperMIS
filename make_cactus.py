@@ -23,7 +23,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
-    AXIS_OPEN, config_mark_style, LEGEND_COLUMNS, cfg_macro, color_name, data_path,
+    config_mark_style, LEGEND_COLUMNS, cfg_macro, color_name, data_path,
     legend_filler, legend_plot_order, legend_to_name,
 )
 
@@ -52,11 +52,13 @@ def write_dat(metric, method, values):
     return path
 
 
-def make_panel(metric, ylabel, ymin, methods, collect_legend, key, width):
-    """One cactus panel (bare tikzpicture, no float, no caption).
+def make_panel(metric, ylabel, ymin, methods, collect_legend, key):
+    """One cactus panel as a ``\\nextgroupplot`` block for the shared 2x2 groupplot
+    assembled in make_solver_plots.
 
-    Both panels show the same methods, so only the first collects the legend; it
-    is typeset once, centred above both.
+    Only panel-specific options live here; the common size/style/`scale only axis`
+    sit on the group, which is what keeps the four axis boxes aligned.  Both panels
+    show the same methods, so only the first collects the legend.
     """
     plots = []
     # Legend order, not file order, with a blank cell wherever a variant does not
@@ -82,19 +84,13 @@ def make_panel(metric, ylabel, ymin, methods, collect_legend, key, width):
     # unreduced on the first row, reduced below it, third variant below that.
     legend_opts = (legend_to_name(key, columns=LEGEND_COLUMNS) if collect_legend
                    else "legend style={draw=none}")
-    return f"""  \\begin{{tikzpicture}}
-    \\begin{{axis}}[
-      width={width}, height=0.32\\linewidth,
+    return f"""    \\nextgroupplot[
       ymode=log, xmin=0, ymin={ymin},
       xlabel={{number of instances solved}},
       ylabel={{{ylabel}}},
       legend cell align=left, {legend_opts},
-      label style={{font=\\small}}, tick label style={{font=\\small}},
-      grid=both, grid style={{gray!20}}, {AXIS_OPEN},
     ]
-{body}
-    \\end{{axis}}
-  \\end{{tikzpicture}}"""
+{body}"""
 
 
 # This module is a PANEL LIBRARY for make_solver_plots.py, which assembles the

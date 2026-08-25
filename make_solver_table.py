@@ -82,7 +82,7 @@ COLUMN_GROUPS = [
 
 # Column header per approach.  The long solver names get a two-line stacked
 # header so the landscape columns stay narrow; every other approach uses its
-# configuration macro (cfg_macro) unchanged.
+# configuration macro (cfg_macro) directly.
 HEADER_OVERRIDE = {
     "satreduce": "\\shortstack{\\textsc{SatAnd}\\\\\\textsc{Reduce}}",
     "vc_solver": "\\shortstack{\\textsc{WeGotYou}\\\\\\textsc{Covered}}",
