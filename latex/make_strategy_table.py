@@ -55,6 +55,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     GRAPH_METHODS, ILP_METHODS, config_mark_style, cfg_macro, color_name,
     emit_fragment, geo_mean_std,
     read_ilp_method_values, read_rows, read_solver_rows,
@@ -62,9 +63,9 @@ from paper_plot_common import (  # noqa: E402
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RED_DIR = os.path.join(HERE, "results", "RED")
-ILP_DIR = os.path.join(HERE, "results", "ILP")
-GRAPH_DIR = os.path.join(HERE, "results", "GRAPH")
+RED_DIR = os.path.join(RESULTS_DIR, "RED")
+ILP_DIR = os.path.join(RESULTS_DIR, "ILP")
+GRAPH_DIR = os.path.join(RESULTS_DIR, "GRAPH")
 
 KB_PER_MB = 1024.0
 RED_TIME_SHIFT = 0.01   # s -- reduction times are small

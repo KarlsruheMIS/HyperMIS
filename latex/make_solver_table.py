@@ -31,6 +31,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     GRAPH_METHODS, ILP_METHOD_PAIRS, ILP_METHODS, add_class_prefix, cfg_macro,
     emit_fragment, instance_blowups, read_rows,
     read_solver_rows,
@@ -38,11 +39,11 @@ from paper_plot_common import (  # noqa: E402
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ILP_DIR = os.path.join(HERE, "results", "ILP")
-GRAPH_DIR = os.path.join(HERE, "results", "GRAPH")
-RED_TSV = os.path.join(HERE, "results", "RED", "red.tsv")
-FRED_TSV = os.path.join(HERE, "results", "RED", "fred.tsv")
-CLIQUE_TSV = os.path.join(HERE, "results", "RED", "clique.tsv")
+ILP_DIR = os.path.join(RESULTS_DIR, "ILP")
+GRAPH_DIR = os.path.join(RESULTS_DIR, "GRAPH")
+RED_TSV = os.path.join(RESULTS_DIR, "RED", "red.tsv")
+FRED_TSV = os.path.join(RESULTS_DIR, "RED", "fred.tsv")
+CLIQUE_TSV = os.path.join(RESULTS_DIR, "RED", "clique.tsv")
 
 LABEL = "tab:overview"
 

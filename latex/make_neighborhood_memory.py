@@ -38,12 +38,13 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     AXIS_OPEN, LEGEND_ABOVE, mark_style, emit_fragment, fig_path, geo_mean_std,
     read_rows, same_reduction_config, shifted_geomean, tab_path,
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.path.join(HERE, "results", "RED")
+INPUT_DIR = os.path.join(RESULTS_DIR, "RED")
 
 KB_PER_MB = 1024.0
 TIME_SHIFT = 0.01   # s

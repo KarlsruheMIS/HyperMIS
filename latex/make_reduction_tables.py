@@ -34,11 +34,12 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     amean, rule_ref, emit_fragment, geo_mean_std, mean_std, read_rows, tab_path,
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.path.join(HERE, "results", "RED")
+INPUT_DIR = os.path.join(RESULTS_DIR, "RED")
 
 # Shift for the (small) reduction times when aggregating across instances.
 RED_TIME_SHIFT = 0.01

@@ -161,23 +161,30 @@ If you publish results using our algorithms, please acknowledge our work by citi
 ## Reproducing the Paper
 
 The tables and figures in the paper are generated from the raw `results/*.tsv`
-files by a small Python pipeline (Python 3, no third-party packages). The raw
-results are committed, so the figures can be rebuilt without rerunning any
-experiment.
+files by a small Python pipeline (Python 3, no third-party packages) that lives
+in [`latex/`](latex/). The raw results are committed, so the figures can be
+rebuilt without rerunning any experiment.
 
 ```bash
 # 1. Regenerate every table/figure fragment from results/ into latex/
-python3 make_all_paper.py
+python3 latex/make_all_paper.py
 
 # 2. Build the standalone document with all tables and figures
 cd latex && latexmk -pdf main.tex
 ```
 
-`make_all_paper.py` runs each `make_*.py` generator and writes the LaTeX
-fragments (plus the reproducibility document `latex/main.tex`) into the repo's
+`latex/make_all_paper.py` runs each `latex/make_*.py` generator and writes the
+LaTeX fragments (plus the reproducibility document `latex/main.tex`) into the
 `latex/` tree; see [`latex/README.md`](latex/README.md) for details. To emit the
 fragments straight into a paper checkout instead, set `PAPER_ROOT`:
 
 ```bash
-PAPER_ROOT=/path/to/paper python3 make_all_paper.py
+PAPER_ROOT=/path/to/paper python3 latex/make_all_paper.py
+```
+
+Remove the regenerable temporary files (Python caches, generated `*.dat` plot
+data, LaTeX build products) at any time with:
+
+```bash
+latex/clean.sh
 ```

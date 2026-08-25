@@ -22,6 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     PAPER_ROOT, REPO_LATEX_ROOT, add_class_prefix, min_by_graph, tab_path,
     write_plot_colors,
 )
@@ -154,8 +155,8 @@ def build_reductions_table_source():
     and the table prints a dash instead of a misleading number.  The original
     blow-up does not depend on the reduction, so it is always filled when present.
     """
-    fred = os.path.join(HERE, "results", "RED", "fred.tsv")
-    clique = os.path.join(HERE, "results", "RED", "clique.tsv")
+    fred = os.path.join(RESULTS_DIR, "RED", "fred.tsv")
+    clique = os.path.join(RESULTS_DIR, "RED", "clique.tsv")
     if not os.path.exists(fred):
         print(f"[warn] missing {fred}; Table A.2 not updated")
         return

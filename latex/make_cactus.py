@@ -23,12 +23,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     config_mark_style, LEGEND_COLUMNS, cfg_macro, color_name, data_path,
     legend_filler, legend_plot_order, legend_to_name,
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.path.join(HERE, "results", "ILP")
+INPUT_DIR = os.path.join(RESULTS_DIR, "ILP")
 
 KB_PER_MB = 1024.0
 

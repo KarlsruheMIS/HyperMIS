@@ -19,6 +19,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from paper_plot_common import (  # noqa: E402
+    RESULTS_DIR,
     PAPER_ROOT, emit_fragment, min_by_graph, read_rows, same_reduction_config,
     shifted_geomean, tab_path,
 )
@@ -28,15 +29,15 @@ from paper_plot_common import (  # noqa: E402
 # prose report it.  It also completes on every instance, whereas the recompute
 # run (red.tsv) times out on a few and would report their partial -- larger --
 # reduced sizes.
-RED_TSV = os.path.join(HERE, "results", "RED", "fred.tsv")
+RED_TSV = os.path.join(RESULTS_DIR, "RED", "fred.tsv")
 # Reference run for the rule set: a different neighborhood strategy, but the
 # same reduction configuration, so its reduceX token is what fred.tsv must carry.
 # We use precompute (nred.tsv) rather than recompute (red.tsv) because it is the
 # other run kept current with the rule set; a stale red.tsv would spuriously trip
 # the config guard here even though this table never reads recompute data.
-REF_TSV = os.path.join(HERE, "results", "RED", "nred.tsv")
+REF_TSV = os.path.join(RESULTS_DIR, "RED", "nred.tsv")
 # Clique-expansion edge counts (gm/rgm) for the blow-up summary row.
-CLIQUE_TSV = os.path.join(HERE, "results", "RED", "clique.tsv")
+CLIQUE_TSV = os.path.join(RESULTS_DIR, "RED", "clique.tsv")
 TIME_LIMIT = 3600.0
 
 
