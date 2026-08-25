@@ -1,0 +1,46 @@
+# Build output
+build/
+
+# Python bytecode caches
+__pycache__/
+*.pyc
+
+# Reproducibility tree (latex/): everything make_all_paper.py generates.
+# Only the generators (latex/*.py), the raw results/*.tsv inputs, the static
+# preamble.tex, and the two README files are tracked; the fragments, plot data,
+# master document and build products below are all rebuilt on demand.
+latex/tables/
+latex/figures/
+latex/tikz/
+latex/main.tex
+latex/data/plot_data/
+latex/*.aux
+latex/*.log
+latex/*.out
+latex/*.fls
+latex/*.fdb_latexmk
+latex/*.synctex.gz
+latex/*.toc
+latex/*.bbl
+latex/*.blg
+latex/main.pdf
+
+# Experiment results: the curated *.tsv are force-added; everything else here
+# (solver preview dirs, backups, scratch) stays out.
+results/*
+!results/RED/
+!results/ILP/
+!results/GRAPH/
+results/RED/*
+results/ILP/*
+results/GRAPH/*
+!results/**/*.tsv
+results/**/*.bak*
+results/**/*.backup
+
+# Full instance set is large; only the small sample instances are force-added.
+hypergraphs/*
+
+# Legacy scratch results, editor state
+old_results/
+.vscode/
