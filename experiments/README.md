@@ -59,7 +59,7 @@ The driver — this shell, GNU parallel, and the `awk`/`date`/`mktemp` calls
 idle SMT siblings), so the harness never preempts a job it is timing.
 `PIN_HOUSEKEEPING=0` disables that.
 
-Measured on `aeghpc110` (EPYC 7702P, 16 CCX × 4 cores), 24 instances × 3
+Measured on (EPYC 7702P, 16 CCX × 4 cores), 24 instances × 3
 repetitions of the identical deterministic reduction:
 
 | mode | jobs | mean per-instance CV | worst instance | Σ mean job time |
@@ -139,9 +139,38 @@ over it silently reports "0/0 groups, nothing to do" and looks like it ran.
 
 `struction`, `vc_solver`, `vc-bnb` and `bmatching_cli` are separate projects; the
 defaults assume they are checked out next to this repo, which a clone elsewhere
-will not be. Missing ones are listed at startup — a solver that is absent would
-otherwise surface as one "command not found" failure per (instance, seed),
-looking like a crash rather than a missing install. Override the ones you have:
+will not be. Missing ones are listed at startup.
+
+**`setup_competitors.sh` installs all four** into the directory `config.sh` already looks
+in — so after it there is nothing to configure:
+
+```bash
+experiments/setup_competitors.sh            # clone, patch, build everything
+experiments/setup_competitors.sh --list     # just show the pinned commits
+experiments/setup_competitors.sh --only satreduce --prefix ~/solvers
+```
+
+| component | repository | binary |
+|-----------|------------|--------|
+| `struction` | KaMIS | `KaMIS/deploy/struction` |
+| `vc_solver` | WeGotYouCovered (PACE 2019 submission repo) | `WeGotYouCovered/optimized/vc_solver` |
+| `satreduce` | vc-satreduce + CaDiCaL | `vc-satreduce/build/vc-bnb` |
+| `bmatching` | HeiHGM/Bmatching | `Bmatching/build/app/bmatching_cli` |
+| `hypermis`  | this repository | `build/run_reduce`, `build/run_ilp`, … |
+
+Each component is independent: one failing (say, `bmatching`, which needs a
+Gurobi licence) never stops the others, and the closing summary says which built
+and which did not. Re-running is safe — clones are fetched and re-checked-out at
+the pin, applied patches are detected and skipped, and a clone with uncommitted
+changes is left alone rather than reset (`--force` overrides).
+
+Each project is built the way its own documentation says.
+Two upstream trees do not build unmodified here; the fixes are in
+`experiments/patches/` (Python-2 SConstruct plus a static-`argtable2` link line
+for WeGotYouCovered, an `unsigned`/`int` `std::max` for Bmatching) and are
+applied by the script.
+
+Anything already installed elsewhere can be used instead, per variable:
 
 ```bash
 STRUCTION=/path/to/struction VC=/path/to/vc_solver \
@@ -209,4 +238,6 @@ exit_code  reason  stderr`.
 | `status.sh` | read-only progress table |
 | `run_all.sh` | orchestrator (`--status`, `--only`, `--force`, `--yes`) |
 | `collect_solvable.sh` | optional: symlink folder of every instance ANY solver proved optimal, to point `HG_SOLVABLE` at |
+| `setup_competitors.sh` | clone + patch + build every competing solver at the commit used for the paper |
+| `patches/` | the build fixes that script applies to the two upstream trees that do not compile as-is |
 | `transpose_hgr.py` | hypergraph transpose, used by the b-matching duality |

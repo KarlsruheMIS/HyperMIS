@@ -1,0 +1,46 @@
+Build fixes for the PACE-2019 WeGotYouCovered solver (vc_solver) on a
+Python-3-only Linux box with no static argtable2:
+  * SConstruct: Python 2 print statements -> Python 3 print().
+  * SConscript: link vc_solver against the SHARED libargtable2 (--static
+    fails, only the shared lib ships) and against gomp instead of gcov;
+    rpath the in-tree argtable dir. Dir('#...') anchors the path at the
+    project root, else the 'optimized/' variant dir is prepended.
+Generated from the tree used for the paper experiments.
+
+diff --git a/SConscript b/SConscript
+index 2371843..893f951 100644
+--- a/SConscript
++++ b/SConscript
+@@ -1,3 +1,4 @@
++import os
+ import platform
+ import sys
+ 
+@@ -93,7 +94,8 @@ libkahip = env.Library('libkahip', libkahip_files)
+ # if env['program'] == 'vc_solver':
+ #         env.Program('vc_solver', ['app/vc_solver.cpp']+libfiles, LIBS=[libkahip, 'libargtable2', 'gomp'])
+ if env['program'] == 'vc_solver':
+-        env.Program('vc_solver', ['app/vc_solver.cpp']+libfiles, LIBS=[libkahip, 'libargtable2','gcov'], LINKFLAGS="--static")
++        env.Program('vc_solver', ['app/vc_solver.cpp']+libfiles, LIBS=[libkahip, 'libargtable2', 'gomp'],
++                    LINKFLAGS='-Wl,-rpath,' + Dir('#extern/argtable-2.10/lib').abspath)
+ # if env['program'] == 'vc_solver':
+ #         env.Program('vc_solver', ['app/vc_solver.cpp']+libfiles, LIBS=[libkahip, 'libargtable2'], LINKFLAGS="-fsanitize=address")
+ 
+diff --git a/SConstruct b/SConstruct
+index 45590bd..327eea3 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -23,11 +23,11 @@ def GetEnvironment():
+     env = Environment(options=opts, ENV=os.environ)
+ 
+     if not env['variant'] in ['optimized', 'optimized_output', 'debug']:
+-        print 'Illegal value for variant: %s' % env['variant']
++        print('Illegal value for variant: %s' % env['variant'])
+         sys.exit(1)
+ 
+     if not env['program'] in ['vc_solver']:
+-        print 'Illegal value for program: %s' % env['program']
++        print('Illegal value for program: %s' % env['program'])
+         sys.exit(1)
+ 
+     if platform.architecture()[0] == '64bit':

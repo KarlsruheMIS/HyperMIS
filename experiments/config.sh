@@ -109,6 +109,9 @@ TRANSPOSE="$EXP_DIR/transpose_hgr.py"
 # External comparison solvers -- separate projects, so these are only a guess at
 # where they sit relative to this repo (they are checked out side by side here).
 # A clone anywhere else will not find them; override the ones you have.
+#
+# experiments/setup_competitors.sh clones, patches and builds all four at the
+# commits the paper's numbers came from, into exactly these default locations.
 STRUCTION="${STRUCTION:-$REPO_DIR/../KaMIS/deploy/struction}"
 VC="${VC:-$REPO_DIR/../WeGotYouCovered/optimized/vc_solver}"
 SATREDUCE="${SATREDUCE:-$REPO_DIR/../vc-satreduce/build/vc-bnb}"
