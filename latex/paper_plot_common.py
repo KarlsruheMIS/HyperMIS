@@ -758,7 +758,9 @@ PAPER_PREVIEW = bool(os.environ.get("PAPER_PREVIEW"))
 # positional DARK2 mapping.
 COLOR_LISTS = [
     (["Time"], DARK2),                                 # reduction_tables (tpe box)
-    (["recompute", "precompute", "ondemand"], DARK2),  # neighborhood_memory
+    # neighborhood_memory: the three hypergraph neighborhood modes plus the
+    # clique-expansion route ("nored"), which is plotted alongside them.
+    (["recompute", "precompute", "ondemand", "nored"], DARK2),
     (ALL_ILP_CONFIGS, CONFIG_COLORS),                  # perf profiles, cactus, solving
 ]
 

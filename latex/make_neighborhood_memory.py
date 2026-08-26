@@ -51,17 +51,32 @@ TIME_SHIFT = 0.01   # s
 MEM_SHIFT = 1.0     # MB
 RN_SHIFT = 1.0      # vertices
 
-# (display label, colour key, file stem, is_hypergraph)
+# (legend label, colour key, file stem, is_hypergraph).  The labels are the bare
+# \rmode macros the strategy table uses, down to the star superscript that marks
+# the clique-expansion route -- spelling the modes out again would make the
+# legend wider than the column, and the table right above the figure already
+# introduces them.  The caption glosses them in one line for a reader who meets
+# the figure first.
 STRATEGIES = [
-    ("\\rmode{r} (recompute)", "recompute", "red", True),
-    ("\\rmode{p} (precompute)", "precompute", "nred", True),
-    ("\\rmode{d} (on-demand)", "ondemand", "fred", True),
-    ("graph reductions", "nored", "gred", False),
+    ("\\rmode{r}", "recompute", "red", True),
+    ("\\rmode{p}", "precompute", "nred", True),
+    ("\\rmode{d}", "ondemand", "fred", True),
+    ("\\rmode[\\star]{G}", "nored", "gred", False),
 ]
-# Only the hypergraph strategies go in the time/memory scatter: the clique row
-# differs in what it reduces, not just in how, so plotting it as a fourth cloud
-# would conflate the two comparisons.
-PLOT_STRATEGIES = [s for s in STRATEGIES if s[3]]
+
+# Plain-English name per strategy, used only in this script's stdout summary --
+# there the LaTeX macro would be unreadable.
+DESCRIPTIONS = {
+    "recompute": "recompute", "precompute": "precompute",
+    "ondemand": "on-demand", "nored": "graph reductions",
+}
+# All four routes go in the time/memory scatter.  The clique row is not a fourth
+# neighborhood mode -- it reduces a different object (the expansion) with a
+# different engine -- but the cost it is being compared on, time and peak memory
+# to reduce the same instance, is exactly the same quantity, so it belongs in the
+# same picture.  The caption says which of the four is the odd one out; the head-
+# to-head remaining-vertex counts printed below say what it costs in reduction
+# quality.
 
 
 def read_strategy(stem):
@@ -158,9 +173,9 @@ def main():
 
     n_disagree, n_material = len(disagree), len(material)
 
-    # ---- scatter (per-graph clouds + strategy means), hypergraph only ----
-    allt = [data[c][g]["time"] for _, c, _, _ in PLOT_STRATEGIES for g in common]
-    allm = [data[c][g]["mem"] for _, c, _, _ in PLOT_STRATEGIES for g in common]
+    # ---- scatter (per-graph clouds + strategy means), all four routes ----
+    allt = [data[c][g]["time"] for _, c, _, _ in STRATEGIES for g in common]
+    allm = [data[c][g]["mem"] for _, c, _, _ in STRATEGIES for g in common]
     xlo, xhi = min(allt) * 0.6, max(allt) * 1.6
     ylo, yhi = min(allm) * 0.6, max(allm) * 1.6
 
@@ -171,7 +186,7 @@ def main():
     # three of -- bigger, opaque and black-outlined, i.e. visibly not the marks
     # being labelled.  legend image post style enlarges the legend's copy so the
     # 1.8pt cloud mark stays legible without changing shape, fill or colour.
-    for i, (label, ckey, _, _) in enumerate(PLOT_STRATEGIES):
+    for i, (label, ckey, _, _) in enumerate(STRATEGIES):
         # Colour and shape already separate the three strategies, so every one
         # is filled solid -- cycling the filling as well would leave one strategy
         # washed out and one hollow for no added information.
@@ -188,7 +203,7 @@ def main():
             f"      \\addplot[only marks, color=c{ckey}, {mark}] "
             f"coordinates {{{cloud}}};")
         plots.append(f"      \\addlegendentry{{{label}}}")
-    for i, (label, ckey, _, _) in enumerate(PLOT_STRATEGIES):
+    for i, (label, ckey, _, _) in enumerate(STRATEGIES):
         # Same shape, colour and filling as its cloud, but large and outlined in
         # black, so the mean reads as the summary of the cloud it sits in.
         mark = mark_style(i, f"c{ckey}", size=4, fill="solid",
@@ -216,19 +231,21 @@ def main():
 {body}
     \\end{{axis}}
   \\end{{tikzpicture}}
-  \\caption{{Time--memory trade-off of the reduction neighborhood strategies.
-    Each small mark is one instance, the large outlined mark is the strategy's
-    shifted geometric mean.}}
+  \\caption{{The time--memory trade-off of reducing an instance.  Comparing
+    \\rmode{{r}} recompute, \\rmode{{p}} precompute, \\rmode{{d}} on-demand, and
+    \\rmode[\\star]{{G}} the clique expansion with graph rules.  Each mark is one
+    instance, the large outlined mark is the strategy's shifted geometric
+    mean.}}
   \\label{{fig:neighborhood-mem}}
 \\end{{figure}}"""
 
     fig_out = emit_fragment(fig_path("neighborhood_mem.tex"), figure)
 
     print(f"instances common to all strategies = {ng}")
-    for label, ckey, _, _ in STRATEGIES:
+    for _, ckey, _, _ in STRATEGIES:
         tg, mg = centroids[ckey]
         rg = shifted_geomean([data[ckey][g]["rn"] for g in common], RN_SHIFT)
-        print(f"    {label:17s} rn={rg:8.1f}  time={tg:7.3g}s  mem={mg:6.0f}MB")
+        print(f"    {DESCRIPTIONS[ckey]:17s} rn={rg:8.1f}  time={tg:7.3g}s  mem={mg:6.0f}MB")
     print(f"    remaining-vertex wins: hypergraph {h_win}, clique {c_win}, ties {ties}")
     print(f"    hypergraph strategies agree exactly on {n_same}/{ng}; "
           f"{n_disagree} differ, {n_material} by >1%")
