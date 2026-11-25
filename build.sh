@@ -16,7 +16,7 @@ if [[ -n "$GUROBI_HOME" ]]; then
     CMAKE_ARGS+=(-DGUROBI_HOME="$GUROBI_HOME")
 fi
 
-# License check (needed at runtime by run_ilp / run_ilp_graph, not for building).
+# License check (needed at runtime).
 license=""
 for f in "${GRB_LICENSE_FILE:-}" "$HOME/gurobi.lic" /opt/gurobi/gurobi.lic; do
     if [[ -n "$f" && -f "$f" ]]; then license="$f"; break; fi

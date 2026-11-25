@@ -735,7 +735,7 @@ def shared_legend_row(key):
 # fragments and builds them into one PDF (see latex/preamble.tex for the
 # vendored packages/macros the fragments depend on).  Point PAPER_ROOT at the
 # paper checkout to target the actual paper instead, e.g.
-#     PAPER_ROOT=/home/ernestine/Latex/HypergraphMISReduction-Paper \
+#     PAPER_ROOT=/path/to/paper \
 #         python3 latex/make_all_paper.py
 #
 # The scripts live in latex/ but read their inputs from the repo's results/
