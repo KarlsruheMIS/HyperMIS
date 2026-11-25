@@ -140,7 +140,15 @@ if (( ${#_missing_ext[@]} )); then
 fi
 unset _b _missing_own _missing_ext
 
-export GUROBI_HOME="${GUROBI_HOME:-/home/ernestineg/gurobi/gurobi1203/linux64}"
+# Gurobi install (dir with include/ and lib/). Honour an existing GUROBI_HOME;
+# otherwise pick the newest common install, if any. CMake does the same lookup.
+if [[ -z "${GUROBI_HOME:-}" ]]; then
+  for _g in $(ls -d /opt/gurobi*/linux64 /usr/local/gurobi*/linux64 2>/dev/null | sort -r); do
+    [[ -f "$_g/include/gurobi_c++.h" ]] && { GUROBI_HOME="$_g"; break; }
+  done
+  unset _g
+fi
+[[ -n "${GUROBI_HOME:-}" ]] && export GUROBI_HOME
 
 # Scratch base for per-job temp files (kept off root /tmp; -j jobs materialize
 # large clique-expansion graphs). Override TMPDIR to relocate.

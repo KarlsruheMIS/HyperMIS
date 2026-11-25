@@ -36,15 +36,23 @@ This is joint work by Ernestine Gro&szlig;mann, Christian Schulz, Darren Strash,
 
 - **GCC** (g++) with C++17 support
 - **CMake** 3.13+
-- **GUROBI** ILP solver &mdash; set `GUROBI_HOME` in `CMakeLists.txt` to match your installation
+- **GUROBI** ILP solver (a license is needed at runtime, picked up via `GRB_LICENSE_FILE` or `~/gurobi.lic`)
 
 ### Build from source
+
+```bash
+./build.sh [/path/to/gurobi/linux64]
+```
+
+or manually:
 
 ```bash
 mkdir build && cd build
 cmake ..
 make
 ```
+
+Tell CMake where Gurobi is (the directory containing `include/` and `lib/`) either with `cmake -DGUROBI_HOME=/opt/gurobi1203/linux64 ..`, by passing the path to `build.sh`, or by setting the `GUROBI_HOME` environment variable. If none is given, common install locations such as `/opt/gurobi*` are searched automatically; if Gurobi is not found, CMake stops with an explanatory message. `build.sh` additionally warns if no Gurobi license is found.
 
 This produces the following executables:
 

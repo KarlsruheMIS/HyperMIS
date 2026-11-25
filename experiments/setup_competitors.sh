@@ -443,21 +443,11 @@ install_bmatching() {
 # ---------------------------------------------------------------------------
 # hypermis -- this repository's own binaries.
 #
-# GUROBI_HOME is set with a plain set() in CMakeLists.txt, so -D on the command
-# line does NOT override it. Rewriting a reviewer's CMakeLists is not this
-# script's job, so we check the value and say exactly which line to edit.
+# CMakeLists.txt finds Gurobi from $GUROBI_HOME (or -DGUROBI_HOME, or the newest
+# /opt/gurobi*) and stops with a clear message if it is missing.
 # ---------------------------------------------------------------------------
 install_hypermis() {
   say "hypermis (this repository)"
-  local cml="$REPO_DIR/CMakeLists.txt"
-  local pinned; pinned="$(awk '/^[[:space:]]*set\(GUROBI_HOME/ {print $2}' "$cml" | tr -d ')')"
-  if [[ -n "$pinned" && ! -d "$pinned" ]]; then
-    err "CMakeLists.txt line $(grep -n 'set(GUROBI_HOME' "$cml" | cut -d: -f1) points at"
-    err "  $pinned"
-    err "which does not exist here. Edit it to your Gurobi install${GUROBI_HOME:+ (GUROBI_HOME=$GUROBI_HOME)}, then re-run."
-    fail hypermis "GUROBI_HOME in CMakeLists.txt does not exist"
-    return
-  fi
   ((NO_BUILD)) && { ok hypermis "build skipped"; return; }
 
   local bld="${BUILD:-$REPO_DIR/build}" log

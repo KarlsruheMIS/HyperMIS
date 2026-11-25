@@ -8,10 +8,42 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
-set(GUROBI_HOME /home/ernestineg/gurobi/gurobi1203/linux64)
-set(GRB_LICENSE_FILE /home/ernestineg/)
-include_directories(${GUROBI_HOME}/include)
-link_directories(${GUROBI_HOME}/lib)
+# ---- Gurobi -----------------------------------------------------------------
+# Pass -DGUROBI_HOME=/path/to/gurobiXXXX/linux64 or set the GUROBI_HOME
+# environment variable. Common install locations are searched as a fallback.
+set(GUROBI_HOME "$ENV{GUROBI_HOME}" CACHE PATH "Gurobi installation directory (contains include/ and lib/)")
+
+# If no path was given, fall back to the newest install in a common location.
+if(NOT GUROBI_HOME)
+    file(GLOB GUROBI_CANDIDATES /opt/gurobi*/linux64 /usr/local/gurobi*/linux64)
+    list(SORT GUROBI_CANDIDATES ORDER DESCENDING)
+    foreach(cand IN LISTS GUROBI_CANDIDATES)
+        if(EXISTS "${cand}/include/gurobi_c++.h")
+            set(GUROBI_HOME "${cand}" CACHE PATH "Gurobi installation directory" FORCE)
+            break()
+        endif()
+    endforeach()
+endif()
+
+# Search only inside the chosen installation so versions are never mixed.
+find_path(GUROBI_INCLUDE_DIR gurobi_c++.h HINTS "${GUROBI_HOME}" PATH_SUFFIXES include NO_DEFAULT_PATH)
+find_library(GUROBI_CXX_LIBRARY NAMES gurobi_c++ HINTS "${GUROBI_HOME}" PATH_SUFFIXES lib NO_DEFAULT_PATH)
+find_library(GUROBI_LIBRARY NAMES gurobi gurobi130 gurobi120 gurobi110 gurobi100 gurobi95 gurobi91
+    HINTS "${GUROBI_HOME}" PATH_SUFFIXES lib NO_DEFAULT_PATH)
+
+if(NOT GUROBI_INCLUDE_DIR OR NOT GUROBI_CXX_LIBRARY OR NOT GUROBI_LIBRARY)
+    message(FATAL_ERROR
+        "Gurobi was not found.\n"
+        "Tell CMake where it is installed (the directory containing include/ and lib/), e.g.\n"
+        "    cmake -DGUROBI_HOME=/opt/gurobi1203/linux64 ..\n"
+        "or set the GUROBI_HOME environment variable. Remember to delete the build/ "
+        "directory contents (or CMakeCache.txt) if a previous run failed.")
+endif()
+
+get_filename_component(GUROBI_LIB_DIR "${GUROBI_LIBRARY}" DIRECTORY)
+message(STATUS "Gurobi include: ${GUROBI_INCLUDE_DIR}")
+message(STATUS "Gurobi libs:    ${GUROBI_CXX_LIBRARY}, ${GUROBI_LIBRARY}")
+include_directories(${GUROBI_INCLUDE_DIR})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/datastructure)
@@ -37,9 +69,9 @@ add_executable(clique_blowup app/clique_blowup.cpp)
 target_link_libraries(run_reduce libfiles)
 target_link_libraries(hypergraph_to_graph libfiles)
 target_link_libraries(clique_blowup libfiles)
-target_link_libraries(run_ilp libfiles gurobi_c++ gurobi120)
+target_link_libraries(run_ilp libfiles ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_HOME}/lib")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath,${GUROBI_LIB_DIR}")
 
 add_executable(graph_reduction_comparison
     graph_comparison/graph_reduction_comparison.cpp
@@ -47,4 +79,4 @@ add_executable(graph_reduction_comparison
     src/ILP_solver.cpp)
 target_include_directories(graph_reduction_comparison PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/graph_comparison)
-target_link_libraries(graph_reduction_comparison libfiles gurobi_c++ gurobi120)
+target_link_libraries(graph_reduction_comparison libfiles ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
