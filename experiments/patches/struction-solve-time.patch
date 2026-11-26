@@ -1,0 +1,11 @@
+--- a/mmwis/extern/struction/app/branch_reduce.cpp
++++ b/mmwis/extern/struction/app/branch_reduce.cpp
+@@ -144,6 +144,8 @@
+               << reducer.min_kernel << "," << reducer.max_min_kernel_comp << "," << reducer.kernelization_time << std::endl;
+ #endif
+ #ifdef OUTPUT_WEIGHT_CONVERGENCE
++    // Solve time without reading the graph (HyperMIS experiments: no I/O in timings).
++    std::cout << "%solve_time " << branch_reduce_time.count() << std::endl;
+     if (!reducer.timeout) {
+             std::cout << "%optimal" << std::endl;
+     }

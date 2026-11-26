@@ -1,0 +1,20 @@
+--- a/app/vc_solver.cpp
++++ b/app/vc_solver.cpp
+@@ -60,6 +60,9 @@
+         t.restart();
+         std::vector<bool> MIS;
+         MIS = getExactMISCombined(graph, mis_config);
++        // Solve time without reading the graph or writing the solution
++        // (HyperMIS experiments: no I/O in timings).
++        double solve_time = t.elapsed();
+ 
+         // Output size and solution
+         // std::cout << "\t\tResult"        << std::endl;
+@@ -70,6 +73,7 @@
+ 
+         if(graph_filepath.empty()) {
+                 writePaceSolutionFromMISToCout(MIS);
++                std::cout << "c solve_time " << solve_time << std::endl;
+         } else {
+                 // Output size and solution
+                 std::cout << "\t\tResult"        << std::endl;

@@ -231,7 +231,7 @@ exit_code  reason  stderr`.
 | `config.sh` | all settings |
 | `topology.sh` | CPU pinning: L3-domain detection, slot table (`experiments/topology.sh` to print it) |
 | `lib.sh` | engine: resume bookkeeping, `run_capture`, failure logging, `run_block` |
-| `run_experiment.sh` | reductions (nred/fred/red) + graph-ILP (gfilp/gfrilp) |
+| `run_experiment.sh` | reductions (nred/fred/red), clique blow-up sizes (`clique.tsv`) conversion running time raw vs reduced (`conversion.tsv`: clique expansion + transpose, build only, no I/O), ILP + graph-ILP |
 | `run_reduction_statistics.sh` | per-rule `stats.tsv` + per-config `config_stats.tsv` |
 | `run_graph_reduction_comparison.sh` | `gred.tsv` + `grilp.tsv` |
 | `run_bmatching_experiments.sh` | `bmatching.tsv` + `rbmatching.tsv` |

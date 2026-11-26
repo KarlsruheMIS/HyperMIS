@@ -21,17 +21,20 @@ imax() { awk -v a="$1" -v b="$2" 'BEGIN{print (a+0>b+0)?a+0:b+0}'; }
 
 # Build the clique-expansion graph. Sets _BG_OFFSET _BG_RTIME _BG_CMEM and the
 # run_capture globals; returns non-zero (and leaves _C_STATUS) on failure.
-# _BG_RTIME is the conversion time, plus the reduction time in reduce mode.
+# _BG_RTIME is building the graph in memory (no file writing), plus the reduction time in reduce mode.
 build_graph() {
   local inst="$1" seed="$2" mode="$3" graph="$4"
   if [[ "$mode" == reduce ]]; then
     run_capture 0 -- "$HG2G" -g "$inst" -d -s "$seed" -k "$KS" -o "$graph"
     _BG_OFFSET=$(awk -F'\t' 'END{print $9+0}'  <<<"$_C_OUT")
-    _BG_RTIME=$(awk  -F'\t' 'END{print $10+0}' <<<"$_C_OUT")
+    # reductions ($13) + building the kernel's expansion in memory ($14); writing
+    # the graph file is not counted.
+    _BG_RTIME=$(awk  -F'\t' 'END{print $13+$14}' <<<"$_C_OUT")
   else
     run_capture 0 -- "$HG2G" -g "$inst" -o "$graph"
     _BG_OFFSET=0
-    _BG_RTIME=$(awk '/ in time /{print $NF+0}' <<<"$_C_OUT")
+    # building the expansion in memory only ("build B"), not writing the file
+    _BG_RTIME=$(awk '/ in time /{gsub(/[(),]/,""); for(i=1;i<NF;i++) if($i=="build") print $(i+1)+0}' <<<"$_C_OUT")
     _BG_RTIME=${_BG_RTIME:-0}
   fi
   _BG_CMEM=$_C_MEM
@@ -60,6 +63,21 @@ _emit_oom_row() {
 _note_timeout() {
   [[ "$_C_STATUS" == TIMEOUT ]] && record_failure "$1" "$2" "$3" "$4" "$_C_RC" timeout "$_C_ERR"
   return 0
+}
+
+# Solver time WITHOUT I/O: the solver's own clock, which starts after the graph
+# is read (struction: patched "%solve_time"; vc_solver: patched "c solve_time";
+# satreduce: its "total_time"). Sets `elapsed`. A run killed at the wall budget
+# prints nothing, so it keeps the wall time (it is unsolved anyway). A run that
+# finished but printed no time is an error: no row, logged, retried -- never a
+# silent fallback to wall time, which would put the I/O back in.
+# args: awk program that prints the time from the solver output.
+_solver_time() {
+  local t; t=$(awk "$1" <<<"$_C_OUT" | tail -1)
+  if [[ -n "$t" ]]; then elapsed=$t; return 0; fi
+  [[ "$_C_STATUS" == TIMEOUT ]] && return 0
+  record_failure "$ALGO" "${ALGO#r}" "$seed" "$name" "$_C_RC" error "no solve time in solver output"
+  return 1
 }
 
 # On a build/OOM/error before the solver runs, emit-or-log consistently.
@@ -92,6 +110,7 @@ w_struction() {
     SUCCESS|TIMEOUT)
       size=$(awk -F',' '/^[0-9]/{v=$1} END{print v+0}' <<<"$_C_OUT")
       grep -q '%optimal' <<<"$_C_OUT" && opt=1 || opt=0
+      _solver_time '/^%solve_time /{print $2}' || return
       _note_timeout "$ALGO" struction "$seed" "$name" ;;
     OOM)  _emit_oom_row "$name" "$ALGO" "$seed"
           record_failure "$ALGO" struction "$seed" "$name" "$_C_RC" oom "$_C_ERR"; return ;;
@@ -105,14 +124,13 @@ w_struction() {
 }
 
 w_vc() {
-  local d0 dtime seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
+  local seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
   name=$(basename "$inst"); graph=$(mktemp "$TMP/g.XXXXXX")
   if ! build_graph "$inst" "$seed" "$MODE" "$graph"; then
     _handle_build_fail "$name" "$ALGO" "$seed"; rm -f "$graph"; return
   fi
   dimacs="$graph.dimacs"
-  d0=$(date +%s.%N); to_dimacs "$graph" "$dimacs"
-  dtime=$(awk -v a="$d0" -v b="$(date +%s.%N)" 'BEGIN{print b-a}')
+  to_dimacs "$graph" "$dimacs"     # pure re-serialization: not timed
   run_capture $((T + 120)) -- "$VC" --time_limit="$T" --seed="$seed" < "$dimacs"
   smem=$_C_MEM; elapsed=$_C_ELAPSED; rm -f "$graph" "$dimacs"
   case "$_C_STATUS" in
@@ -120,6 +138,7 @@ w_vc() {
       gn=$(awk '/^s vc/{print $3}' <<<"$_C_OUT")
       vc=$(awk '/^s vc/{print $4}' <<<"$_C_OUT")
       if [[ -n "$vc" && "$_C_STATUS" == SUCCESS ]]; then mis=$((gn - vc)); opt=1; else mis=0; opt=0; fi
+      _solver_time '/^c solve_time /{print $3}' || return
       _note_timeout "$ALGO" vc_solver "$seed" "$name" ;;
     OOM)  _emit_oom_row "$name" "$ALGO" "$seed"
           record_failure "$ALGO" vc_solver "$seed" "$name" "$_C_RC" oom "$_C_ERR"; return ;;
@@ -127,13 +146,13 @@ w_vc() {
           record_failure "$ALGO" vc_solver "$seed" "$name" "$_C_RC" error "$_C_ERR"; return ;;
   esac
   size=$(awk -v a="$_BG_OFFSET" -v b="$mis" 'BEGIN{print a+b}')
-  total=$(awk -v a="$_BG_RTIME" -v d="$dtime" -v b="$elapsed" 'BEGIN{print a+d+b}')
+  total=$(awk -v a="$_BG_RTIME" -v b="$elapsed" 'BEGIN{print a+b}')
   mem=$(imax "$_BG_CMEM" "$smem")
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ALGO" "$size" "$total" "$opt" "$seed" "$mem"
 }
 
 w_satreduce() {
-  local d0 dtime seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
+  local seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
   name=$(basename "$inst"); graph=$(mktemp "$TMP/g.XXXXXX")
   if ! build_graph "$inst" "$seed" "$MODE" "$graph"; then
     _handle_build_fail "$name" "$ALGO" "$seed"; rm -f "$graph"; return
@@ -144,8 +163,7 @@ w_satreduce() {
     rm -f "$graph"; return
   fi
   dimacs="$graph.dimacs"
-  d0=$(date +%s.%N); to_dimacs "$graph" "$dimacs"
-  dtime=$(awk -v a="$d0" -v b="$(date +%s.%N)" 'BEGIN{print b-a}')
+  to_dimacs "$graph" "$dimacs"     # pure re-serialization: not timed
   # vc-bnb has no internal time limit and no seed: the wall timeout is the only limit.
   run_capture "$T" -- "$SATREDUCE" --stats "$dimacs"
   smem=$_C_MEM; elapsed=$_C_ELAPSED; rm -f "$graph" "$dimacs"
@@ -154,6 +172,7 @@ w_satreduce() {
       vc=$(awk '/vertex_cover:/{print $2+0}' <<<"$_C_OUT")
       gn=$(awk '/graph_size:/{print $2+0}'   <<<"$_C_OUT")
       if [[ -n "$vc" ]]; then mis=$((gn - vc)); opt=1; else mis=0; opt=0; fi
+      _solver_time '/total_time:/{print $2}' || return
       _note_timeout "$ALGO" satreduce "$seed" "$name" ;;
     OOM)  _emit_oom_row "$name" "$ALGO" "$seed"
           record_failure "$ALGO" satreduce "$seed" "$name" "$_C_RC" oom "$_C_ERR"; return ;;
@@ -161,11 +180,11 @@ w_satreduce() {
           record_failure "$ALGO" satreduce "$seed" "$name" "$_C_RC" error "$_C_ERR"; return ;;
   esac
   size=$(awk -v a="$_BG_OFFSET" -v b="$mis" 'BEGIN{print a+b}')
-  total=$(awk -v a="$_BG_RTIME" -v d="$dtime" -v b="$elapsed" 'BEGIN{print a+d+b}')
+  total=$(awk -v a="$_BG_RTIME" -v b="$elapsed" 'BEGIN{print a+b}')
   mem=$(imax "$_BG_CMEM" "$smem")
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ALGO" "$size" "$total" "$opt" "$seed" "$mem"
 }
-export -f build_graph to_dimacs _handle_build_fail _emit_crash_row _emit_oom_row _note_timeout w_struction w_vc w_satreduce imax
+export -f _solver_time build_graph to_dimacs _handle_build_fail _emit_crash_row _emit_oom_row _note_timeout w_struction w_vc w_satreduce imax
 
 mapfile -t SOLVABLE < <(ls "$HG_SOLVABLE"/*)
 

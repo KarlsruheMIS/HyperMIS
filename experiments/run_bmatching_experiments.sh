@@ -2,6 +2,10 @@
 #   SOTA hypergraph b-matching (HeiHGM) as an exact MIS solver via transpose
 #   duality (its own reductions, then Gurobi, then unfolding), once raw (bmatching.tsv) and once after HyperMIS reductions
 #   (rbmatching.tsv). One TSV line per (instance,seed); resumable + failure log.
+#   time = HyperMIS reductions (reduce mode) + building the transpose in memory +
+#   b-matching's own algorithm time. No file I/O is counted anywhere: run_reduce
+#   stops its clock before writing the kernel, the transposer reports its build
+#   only, and bmatching_cli's time_ms excludes reading the dual.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/config.sh"
@@ -55,8 +59,11 @@ w_bmatching() {
     record_failure "$ALGO" transpose "$seed" "$name" "$_C_RC" error "$_C_ERR"
     rm -f "$base" "$base.hgr" "$dual"; return
   fi
-  local pmem=$_C_MEM ptime=$_C_ELAPSED     # transpose: counted in the total time
-  offset=$((offset + _C_OUT))   # isolated vertices dropped by the transposer
+  # Transpose output: "<dropped isolated vertices> <build seconds>". Only the
+  # in-memory build counts towards the total -- reading/writing files does not.
+  local pmem=$_C_MEM ptime dropped
+  read -r dropped ptime <<<"$_C_OUT"
+  offset=$((offset + dropped))
 
   local dm
   dm=$(awk 'NR==1{print $1; exit}' "$dual")
@@ -74,6 +81,10 @@ w_bmatching() {
   local mis opt size mem mt ex
   case "$_C_STATUS" in
     SUCCESS)
+      # The solver's own algorithm time (time_ms), which excludes loading the
+      # input file, rather than the process wall time.
+      elapsed=$(awk '/^time_ms:/{print $2/1000}' <<<"$bmout")
+      [[ -n "$elapsed" ]] || { record_failure "$ALGO" bmatching "$seed" "$name" "$rc" error "no time_ms in output"; return; }
       mt=$(awk '/^size:/{print $2+0}'  <<<"$bmout")
       ex=$(awk '/^exact:/{print $2}'   <<<"$bmout")
       [[ "$ex" == true ]] && opt=1 || opt=0

@@ -268,6 +268,8 @@ install_struction() {
   prepare struction "$KAMIS_URL" "$dir" "$KAMIS_COMMIT" --recursive || return
   local sub; sub="$(git -C "$dir" submodule status mmwis/extern/KaHIP 2>/dev/null | awk '{print $1}' | tr -d '+-')"
   [[ -z "$sub" || "$sub" == "$KAHIP_COMMIT" ]] || warn "KaHIP submodule is at ${sub:0:9}, expected ${KAHIP_COMMIT:0:9}"
+  # Print the solve time (graph already read) so experiments time no I/O.
+  apply_patch "$dir" "$PATCHES/struction-solve-time.patch" || { fail struction "patch failed"; return; }
   ((NO_BUILD)) && { ok struction "cloned (build skipped)"; return; }
   built struction "$dir/deploy/struction" && return
 
@@ -298,6 +300,8 @@ install_vc_solver() {
   say "vc_solver (WeGotYouCovered / PACE 2019)"
   prepare vc_solver "$WGYC_URL" "$dir" "$WGYC_COMMIT" || return
   apply_patch "$dir" "$PATCHES/wegotyoucovered-build.patch" || { fail vc_solver "patch failed"; return; }
+  # Print the solve time (graph already read) so experiments time no I/O.
+  apply_patch "$dir" "$PATCHES/wegotyoucovered-solve-time.patch" || { fail vc_solver "patch failed"; return; }
 
   local libdir="$dir/extern/argtable-2.10/lib"
   if [[ -f "$libdir/libargtable2.so.0.1.5" && ! -e "$libdir/libargtable2.so" ]]; then

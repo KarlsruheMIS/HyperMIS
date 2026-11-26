@@ -27,8 +27,16 @@ file. They are therefore NOT written, and the dual header counts only the
 non-empty edges. Every isolated vertex is in each maximum independent set, so
 the number of dropped vertices is printed to stdout and the caller must add it
 to the solution size.
+
+Output on stdout: "<dropped> <build_seconds>". build_seconds covers ONLY the
+in-memory construction of the dual (incidence lists), not reading the input
+or writing the output: the experiments count conversion cost without I/O.
 """
 import sys
+import time
+from array import array
+
+import numpy as np
 
 
 def read_tokens_lines(path):
@@ -41,46 +49,68 @@ def read_tokens_lines(path):
             yield s.split()
 
 
-def transpose(in_path, out_path):
-    it = read_tokens_lines(in_path)
+def read_hgr(path):
+    """I/O + parsing: returns (m, n, pins, sizes) with 1-based vertex ids."""
+    it = read_tokens_lines(path)
     header = next(it)
     m = int(header[0])              # number of hyperedges
     n = int(header[1])              # number of vertices
     fmt = int(header[2]) if len(header) >= 3 else 0
     skip_weight = fmt in (10, 11)   # leading vertex/edge-weight token per line
 
-    # incident[v] = sorted list of edge indices (1-based) that contain vertex v
-    incident = [[] for _ in range(n + 1)]
+    pins = array("q")
+    sizes = array("q")
     e = 0
     for toks in it:
         if e >= m:
             break
         e += 1
-        verts = toks[1:] if skip_weight else toks
-        for t in verts:
-            v = int(t)
-            if v <= 0:
-                continue
-            if v > n:
-                raise ValueError(f"{in_path}: vertex {v} exceeds declared n={n}")
-            if incident[v] and incident[v][-1] == e:
-                continue                # vertex listed twice in the same edge
-            incident[v].append(e)      # dual vertex = original edge index (1-based)
+        verts = [int(t) for t in (toks[1:] if skip_weight else toks)]
+        verts = [v for v in verts if v > 0]
+        if verts and max(verts) > n:
+            raise ValueError(f"{path}: vertex {max(verts)} exceeds declared n={n}")
+        pins.extend(verts)
+        sizes.append(len(verts))
     if e != m:
-        raise ValueError(f"{in_path}: expected {m} edge lines, found {e}")
+        raise ValueError(f"{path}: expected {m} edge lines, found {e}")
+    return m, n, np.frombuffer(pins, dtype=np.int64), np.frombuffer(sizes, dtype=np.int64)
+
+
+def build_dual(m, n, pins, sizes):
+    """The transpose itself, in memory: for every vertex the sorted, duplicate-free
+    list of (1-based) edges containing it. Returns (edge ids, per-vertex counts)."""
+    edge = np.repeat(np.arange(1, m + 1, dtype=np.int64), sizes)
+    order = np.lexsort((edge, pins))            # by vertex, then by edge
+    v, e = pins[order], edge[order]
+    keep = np.ones(len(v), dtype=bool)          # a vertex listed twice in one edge
+    keep[1:] = (v[1:] != v[:-1]) | (e[1:] != e[:-1])
+    v, e = v[keep], e[keep]
+    counts = np.bincount(v, minlength=n + 1)[1:]
+    return e, counts
+
+
+def transpose(in_path, out_path):
+    m, n, pins, sizes = read_hgr(in_path)
+    t0 = time.perf_counter()
+    dual_e, counts = build_dual(m, n, pins, sizes)
+    build = time.perf_counter() - t0
 
     # Dual: one edge per non-isolated original vertex, m vertices (one per
     # original edge).
-    dual_edges = [inc for inc in incident[1:] if inc]
+    nonempty = int(np.count_nonzero(counts))
     with open(out_path, "w") as out:
-        out.write(f"{len(dual_edges)} {m}\n")
-        for inc in dual_edges:
-            out.write(" ".join(map(str, inc)))
-            out.write("\n")
-    return n - len(dual_edges)          # number of dropped isolated vertices
+        out.write(f"{nonempty} {m}\n")
+        pos = 0
+        for c in counts.tolist():
+            if c:
+                out.write(" ".join(map(str, dual_e[pos:pos + c].tolist())))
+                out.write("\n")
+                pos += c
+    return n - nonempty, build                  # dropped isolated vertices, build time
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit(f"usage: {sys.argv[0]} <in.hgr> <out.dual.hgr>")
-    print(transpose(sys.argv[1], sys.argv[2]))
+    dropped, build = transpose(sys.argv[1], sys.argv[2])
+    print(f"{dropped} {build:.6f}")

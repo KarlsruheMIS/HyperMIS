@@ -25,7 +25,9 @@ const char *help = "Generate clique expansion graph from given hypergraph.\n"
                    "-o path \tSpecify path and name for the output graph in METIS format\n"
                    "-n \t\tEnable precomputed neighborhood array (initially computes neighborhoods)\n"
                    "-d \t\tApply HyperMIS reductions first (on-demand neighborhoods), then expand the kernel.\n"
-                   "   \t\tPrints a run_reduce-style line: name reduce<cfg> n m avg_e rn rm r_avg_e offset time seed\n"
+                   "   \t\tPrints a run_reduce-style line: name reduce<cfg> n m avg_e rn rm r_avg_e offset time seed rgm red_time build_time\n"
+                   "   \t\t(time = reductions + expansion + writing; rgm = edges of the kernel's expansion;\n"
+                   "   \t\t red_time = reductions only; build_time = building the expansion in memory only)\n"
                    "-r N \t\tReduction config used with -d (default all = 9; see run_reduce -h)\n"
                    "-s N \t\tSeed used with -d\n"
                    "-t/-k sec \tReduction time limit in seconds used with -d (default 100)\n"
@@ -33,7 +35,9 @@ const char *help = "Generate clique expansion graph from given hypergraph.\n"
                    "-N n \t\tMax neighborhood size considered by the reductions (with -d, default 200)\n"
                    "\n* Mandatory input";
 
-void clique_expansion_to_file(hypergraph *g, std::string filename)
+// Returns the number of edges of the clique expansion (64-bit: Chebyshev4 has
+// 2.3e9 edges, so the 4.6e9 half-edge count overflows a 32-bit NodeID).
+uint64_t clique_expansion_to_file(hypergraph *g, std::string filename)
 {
     NodeID *neighbors = (NodeID *)malloc(sizeof(NodeID) * g->n);
     fast_set n_set(g->n);
@@ -45,11 +49,11 @@ void clique_expansion_to_file(hypergraph *g, std::string filename)
     if (!outFile.is_open())
     {
         std::cerr << "Error: Could not open file " << filename << " for writing.\n";
-        return;
+        exit(1);
     }
 
     // compute number of edges after clique expansion
-    NodeID m_graph = 0;
+    uint64_t m_graph = 0;
 
     for (NodeID v = 0; v < n; v++)
     {
@@ -69,6 +73,7 @@ void clique_expansion_to_file(hypergraph *g, std::string filename)
     outFile.close();
 
     free(neighbors);
+    return m_graph / 2;
 }
 
 int main(int argc, char **argv)
@@ -189,11 +194,17 @@ int main(int argc, char **argv)
             avg_e_size = avg_e_size / rg->m;
         }
 
+        // Building the kernel's clique expansion in memory (its adjacency
+        // lists) is timed on its own: no reductions, no writing the file.
+        auto red_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> build_time(0);
+        uint64_t rgm = 0;
         if (rg->n > 0)
         {
             fast_set node_set(rg->n);
             hypergraph_build_neighbors(rg, &node_set);
-            clique_expansion_to_file(rg, graph_path);
+            build_time = std::chrono::high_resolution_clock::now() - red_end;
+            rgm = clique_expansion_to_file(rg, graph_path);
         }
         else
         {
@@ -204,10 +215,16 @@ int main(int argc, char **argv)
 
         // The reported time covers the reductions AND the clique expansion of
         // the kernel (neighborhoods plus writing the graph file).
-        std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
-        std::printf("%s\treduce%ld\t%d\t%d\t%.2f\t%d\t%d\t%.2f\t%d\t%.5f\t%d\n",
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> time = end - mis_alg->start_time;
+        std::chrono::duration<double> red_time = red_end - mis_alg->start_time;
+        // rgm, red_time and build_time are appended AFTER seed so existing
+        // consumers, which read the fields by position ($9 offset, $10 time),
+        // are unaffected.
+        std::printf("%s\treduce%ld\t%d\t%d\t%.2f\t%d\t%d\t%.2f\t%d\t%.5f\t%d\t%llu\t%.5f\t%.5f\n",
                     name.c_str(), REDUCTION_CONFIG, g->n, g->m, original_avg_e_size,
-                    rg->n, rg->m, avg_e_size, mis_alg->status.IS_size, (double)time.count(), seed);
+                    rg->n, rg->m, avg_e_size, mis_alg->status.IS_size, (double)time.count(), seed,
+                    (unsigned long long)rgm, (double)red_time.count(), (double)build_time.count());
 
         hypergraph_free(rg);
         hypergraph_free(g);
@@ -218,10 +235,14 @@ int main(int argc, char **argv)
     fast_set node_set(g->n);
     auto start_time = std::chrono::high_resolution_clock::now();
     hypergraph_build_neighbors(g, &node_set);
+    std::chrono::duration<double> build_time = std::chrono::high_resolution_clock::now() - start_time;
 
-    clique_expansion_to_file(g, graph_path);
+    uint64_t gm = clique_expansion_to_file(g, graph_path);
     std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time);
-    std::cout << name << " transformed to " << graph_name << ".graph in time " << time.count() << std::endl;
+    // build = the expansion in memory only; the total (incl. writing) must stay
+    // the LAST token: run_graph_solver_experiments.sh reads it as $NF.
+    std::cout << name << " transformed to " << graph_name << ".graph (n " << g->n << ", m " << gm
+              << ", build " << build_time.count() << ") in time " << time.count() << std::endl;
     hypergraph_free(g);
     return 0;
 }

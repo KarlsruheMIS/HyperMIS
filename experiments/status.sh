@@ -19,6 +19,7 @@ EXPERIMENTS=(
   "red|RED/red.tsv|1|full"
   "gred|RED/gred.tsv|1|full"
   "clique|RED/clique.tsv|1|full"
+  "conversion|RED/conversion.tsv|1|solvable"
   "stats|RED/stats.tsv|any|full"
   "config_stats|RED/config_stats.tsv|sub:${#CONFIGS[@]}|full"
   "ilp|ILP/ilp.tsv|1|solvable"
