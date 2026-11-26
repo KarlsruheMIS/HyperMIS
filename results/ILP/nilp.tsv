@@ -10,7 +10,6 @@ ca-CondMat.mtx.hgr.random100	ILP	4057	0.326069	1	1	59916
 case39.mtx.hgr.random100.rendered	ILP	10017	20.7343	1	1	1759160
 Chebyshev4.mtx.hgr.random100.rendered	ILP	1	223.121	1	1	18841600
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.263439	1	1	98180
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	88.0686	1	1	1897232
 dac2012_superblue11.hgr.random100	ILP	260445	3600.42	0	1	3907084
 dac2012_superblue12.hgr.random100	ILP	281838	3600.58	0	1	6395900
 dac2012_superblue14.hgr.random100	ILP	182604	3600.5	0	1	4407256
@@ -85,7 +84,6 @@ ca-CondMat.mtx.hgr.random100	ILP	4057	0.409986	1	21	59868
 case39.mtx.hgr.random100.rendered	ILP	10017	22.7298	1	21	1759344
 Chebyshev4.mtx.hgr.random100.rendered	ILP	1	229.766	1	21	18840576
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.285168	1	21	100132
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	90.1569	1	21	1895396
 dac2012_superblue11.hgr.random100	ILP	260445	3600.45	0	21	3906908
 dac2012_superblue12.hgr.random100	ILP	281792	3600.57	0	21	6395160
 dac2012_superblue14.hgr.random100	ILP	182604	3600.33	0	21	4391900
@@ -160,7 +158,6 @@ ca-CondMat.mtx.hgr.random100	ILP	4057	0.411701	1	203	59416
 case39.mtx.hgr.random100.rendered	ILP	10017	22.9275	1	203	1759160
 Chebyshev4.mtx.hgr.random100.rendered	ILP	1	222.313	1	203	18840576
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.283832	1	203	100132
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	89.7037	1	203	1897380
 dac2012_superblue11.hgr.random100	ILP	260445	3600.42	0	203	3907092
 dac2012_superblue12.hgr.random100	ILP	281792	3600.6	0	203	6391652
 dac2012_superblue14.hgr.random100	ILP	182604	3600.58	0	203	4407160
@@ -235,7 +232,6 @@ ca-CondMat.mtx.hgr.random100	ILP	4057	0.412899	1	1002	57636
 case39.mtx.hgr.random100.rendered	ILP	10017	22.9018	1	1002	1758136
 Chebyshev4.mtx.hgr.random100.rendered	ILP	1	221.681	1	1002	18843648
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.28108	1	1002	100132
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	102.511	1	1002	1897300
 dac2012_superblue11.hgr.random100	ILP	260445	3600.56	0	1002	3908220
 dac2012_superblue12.hgr.random100	ILP	281792	3600.56	0	1002	6395580
 dac2012_superblue14.hgr.random100	ILP	182604	3600.58	0	1002	4408760

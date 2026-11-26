@@ -27,10 +27,10 @@ Chebyshev4.mtx.hgr.random100.rendered	vc_solver	-2	257.90	0	1	0
 Chebyshev4.mtx.hgr.random100.rendered	vc_solver	-2	257.04	0	21	0
 Chebyshev4.mtx.hgr.random100.rendered	vc_solver	-2	257.62	0	203	0
 Chebyshev4.mtx.hgr.random100.rendered	vc_solver	-2	259.38	0	1002	0
-crystk02.mtx.hgr.random100.lg.metis	vc_solver	1941959	7.13	1	1	591144
-crystk02.mtx.hgr.random100.lg.metis	vc_solver	1941959	7.19	1	21	591788
-crystk02.mtx.hgr.random100.lg.metis	vc_solver	1941959	7.18	1	203	591624
-crystk02.mtx.hgr.random100.lg.metis	vc_solver	1941959	7.24	1	1002	591788
+crystk02.mtx.hgr	vc_solver	252	0.264894	1	1	77820
+crystk02.mtx.hgr	vc_solver	252	0.234098	1	21	77808
+crystk02.mtx.hgr	vc_solver	252	0.23326	1	203	77792
+crystk02.mtx.hgr	vc_solver	252	0.230174	1	1002	77824
 c-64.mtx.hgr.random100	vc_solver	22600	215.83	1	1	2523308
 c-64.mtx.hgr.random100	vc_solver	22600	216.55	1	21	2523292
 c-64.mtx.hgr.random100	vc_solver	22600	216.24	1	203	2523708

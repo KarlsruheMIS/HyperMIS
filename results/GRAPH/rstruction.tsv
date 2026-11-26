@@ -35,10 +35,10 @@ Chem97Zt.mtx.hgr.random100.rendered	rstruction	131	0.0145	1	1	9216
 Chem97Zt.mtx.hgr.random100.rendered	rstruction	131	0.01301	1	21	9216
 Chem97Zt.mtx.hgr.random100.rendered	rstruction	131	0.01361	1	203	9216
 Chem97Zt.mtx.hgr.random100.rendered	rstruction	131	0.01353	1	1002	9216
-crystk02.mtx.hgr.random100.lg.metis	rstruction	1941959	8.77852	1	1	433152
-crystk02.mtx.hgr.random100.lg.metis	rstruction	1941959	8.73176	1	21	433152
-crystk02.mtx.hgr.random100.lg.metis	rstruction	1941959	8.51494	1	203	433152
-crystk02.mtx.hgr.random100.lg.metis	rstruction	1941959	8.71447	1	1002	433152
+crystk02.mtx.hgr	rstruction	252	0.02469	1	1	17408
+crystk02.mtx.hgr	rstruction	252	0.02471	1	21	17408
+crystk02.mtx.hgr	rstruction	252	0.02464	1	203	16384
+crystk02.mtx.hgr	rstruction	252	0.02467	1	1002	17408
 dac2012_superblue16.hgr.random100	rstruction	221504	3607.88	0	1	355904
 dac2012_superblue16.hgr.random100	rstruction	221501	3607.9	0	21	355900
 dac2012_superblue16.hgr.random100	rstruction	221499	3607.91	0	203	355900

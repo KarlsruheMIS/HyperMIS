@@ -137,12 +137,10 @@ sat14_AProVE07-27.cnf.dual.hgr.random100	ILP	3165	105.058	1	1	76372
 sat14_AProVE07-27.cnf.dual.hgr.random100	ILP	3165	105.216	1	21	77612
 sat14_AProVE07-27.cnf.dual.hgr.random100	ILP	3165	105.215	1	1002	76724
 sat14_AProVE07-27.cnf.dual.hgr.random100	ILP	3165	106.355	1	203	85020
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	245.153	1	1	806440
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	7086	117.058	1	1	679140
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	7086	117.064	1	21	678112
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	7086	117.058	1	203	678112
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	7086	117.049	1	1002	678160
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	318.993	1	203	803228
 sat14_atco_enc1_opt2_10_12.cnf.dual.hgr.random100	ILP	4594	120.816	1	1	248152
 sat14_atco_enc1_opt2_10_12.cnf.dual.hgr.random100	ILP	4594	120.832	1	21	249212
 sat14_atco_enc1_opt2_10_12.cnf.dual.hgr.random100	ILP	4594	120.815	1	203	250064
@@ -151,10 +149,8 @@ sat14_bob12m09-opt.cnf.dual.hgr.random100	ILP	24209	88.3254	1	1	289724
 sat14_E02F22.cnf.primal.hgr.random100	ILP	594	12.4892	1	1	652508
 sat14_E02F22.cnf.primal.hgr.random100	ILP	594	12.4539	1	21	652508
 sat14_E02F22.cnf.primal.hgr.random100	ILP	594	12.4109	1	203	651328
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	350.589	1	21	803240
 sat14_E02F22.cnf.primal.hgr.random100	ILP	594	12.5014	1	1002	652504
 sat14_dated-10-11-u.cnf.hgr.random100	ILP	90537	79.9848	1	1	361988
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	375.673	1	1002	805588
 sat14_bob12m09-opt.cnf.dual.hgr.random100	ILP	24209	88.7243	1	21	289720
 sat14_bob12m09-opt.cnf.dual.hgr.random100	ILP	24209	88.3009	1	203	289716
 sat14_bob12m09-opt.cnf.dual.hgr.random100	ILP	24209	88.3218	1	1002	289196
@@ -207,3 +203,7 @@ sat14_UCG-15-10p1.cnf.primal.hgr.random100	ILP	39543	575.553	1	21	1387676
 sat14_UCG-15-10p1.cnf.primal.hgr.random100	ILP	39543	572.742	1	1002	1386656
 sat14_UCG-15-10p1.cnf.hgr.random100	ILP	145511	3026.71	1	203	942340
 sat14_UCG-15-10p1.cnf.hgr.random100	ILP	145511	3034.5	1	1002	942272
+crystk02.mtx.hgr	ILP	252	0.0237565	1	1	19456
+crystk02.mtx.hgr	ILP	252	0.0232534	1	21	19456
+crystk02.mtx.hgr	ILP	252	0.0230114	1	203	19456
+crystk02.mtx.hgr	ILP	252	0.0226757	1	1002	19456

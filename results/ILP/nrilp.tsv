@@ -35,10 +35,6 @@ Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.220341	1	1	78848
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.216685	1	21	78848
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.216604	1	203	78848
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.218101	1	1002	78848
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	9.3926	1	1	547840
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	9.32415	1	21	547840
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	9.36004	1	203	547840
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	9.46241	1	1002	547840
 case39.mtx.hgr.random100.rendered	ILP	10017	112.287	1	21	3292812
 case39.mtx.hgr.random100.rendered	ILP	10017	113.075	1	203	3292912
 case39.mtx.hgr.random100.rendered	ILP	10017	112.798	1	1002	3292900
@@ -207,3 +203,7 @@ kron_g500-logn16.mtx.hgr.random100.rendered	ILP	14103	1610.34	1	21	4170752
 kron_g500-logn16.mtx.hgr.random100.rendered	ILP	14103	1607.78	1	203	4168704
 kron_g500-logn16.mtx.hgr.random100.rendered	ILP	14103	1613.11	1	1002	4169728
 sat14_UCG-15-10p1.cnf.hgr.random100	ILP	145511	3120.66	1	1002	986872
+crystk02.mtx.hgr	ILP	252	0.29187	1	1	40960
+crystk02.mtx.hgr	ILP	252	0.290965	1	21	40960
+crystk02.mtx.hgr	ILP	252	0.291717	1	203	40960
+crystk02.mtx.hgr	ILP	252	0.291239	1	1002	40960

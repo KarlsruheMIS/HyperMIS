@@ -39,10 +39,6 @@ c-64.mtx.hgr.random100	ILP	22600	13.2776	1	203	1231872
 c-64.mtx.hgr.random100	ILP	22600	13.2993	1	1002	1231872
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.361852	1	203	110592
 Chem97Zt.mtx.hgr.random100.rendered	ILP	131	0.362471	1	1002	110592
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3.12126	1	1	442208
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3.15132	1	21	442708
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3.14037	1	203	442712
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3.20743	1	1002	442712
 dictionary28.mtx.hgr.random100	ILP	29631	2.09062	1	1	56120
 dictionary28.mtx.hgr.random100	ILP	29631	2.08583	1	21	55296
 ex19.mtx.hgr.random100	ILP	985	0.0493987	1	1	16384
@@ -207,3 +203,7 @@ dac2012_superblue11.hgr.random100	ILP	260445	2011.83	1	21	2192876
 dac2012_superblue11.hgr.random100	ILP	260445	2011.48	1	203	2194552
 dac2012_superblue11.hgr.random100	ILP	260445	2014	1	1	2194552
 dac2012_superblue11.hgr.random100	ILP	260445	2010.41	1	1002	2194348
+crystk02.mtx.hgr	ILP	252	0.26345	1	1	48128
+crystk02.mtx.hgr	ILP	252	0.26421	1	21	48128
+crystk02.mtx.hgr	ILP	252	0.261067	1	203	48128
+crystk02.mtx.hgr	ILP	252	0.268148	1	1002	48128

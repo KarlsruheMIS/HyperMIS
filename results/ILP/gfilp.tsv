@@ -31,10 +31,6 @@ sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	0	3600	0	1	0
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	0	3600	0	21	0
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	0	3600	0	203	0
 sat14_atco_enc1_opt2_05_4.cnf.dual.hgr.random100	ILP	0	3600	0	1002	0
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3603.81	0	1	14797700
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3603.74	0	21	14798448
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3603.79	0	203	14799228
-crystk02.mtx.hgr.random100.lg.metis	ILP	1941959	3603.79	0	1002	14798132
 dac2012_superblue11.hgr.random100	ILP	260444	3607.48	0	1	23230440
 dac2012_superblue11.hgr.random100	ILP	260444	3607.61	0	21	23231172
 dac2012_superblue11.hgr.random100	ILP	260444	3607.83	0	203	23232272
@@ -207,3 +203,7 @@ soc-sign-epinions.mtx.hgr.random100	ILP	70473	955.509	1	21	17479928
 soc-sign-epinions.mtx.hgr.random100	ILP	70473	958.339	1	1	17479924
 soc-sign-epinions.mtx.hgr.random100	ILP	70473	960.333	1	203	17479924
 soc-sign-epinions.mtx.hgr.random100	ILP	70473	959.613	1	1002	17478296
+crystk02.mtx.hgr	ILP	252	9.86415	1	1	944724
+crystk02.mtx.hgr	ILP	252	9.79342	1	21	945432
+crystk02.mtx.hgr	ILP	252	9.83541	1	203	943384
+crystk02.mtx.hgr	ILP	252	9.84608	1	1002	945436
