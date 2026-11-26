@@ -314,7 +314,13 @@ def main():
         if v is None:
             return NA
         text = fmt.format(v)
-        return f"{{\\bfseries {text}}}" if key in best and v == best[key] else text
+        if not (key in best and v == best[key]):
+            return text
+        # The braces hide a bold cell from siunitx, so it does not group the
+        # digits itself: add the thousands separator the other cells get.
+        if len(text) >= 4 and text.isdigit():
+            text = f"{int(text):,}".replace(",", "\\,")
+        return f"{{\\bfseries {text}}}"
 
     def marker(m):
         # The config's figure marker, drawn inline so a row matches its curve.
@@ -405,20 +411,22 @@ def main():
 
     frag = f"""\\begin{{table*}}[t]
   \\centering
-  \\caption{{Reduction and solving cost per strategy on solvable instances. The
+  \\caption{{Reduction and solving cost per strategy. \\rev{{The reduction columns
+    use the ${n_red}$ instances that all strategies process, and the solving columns
+    the ${n_any}$ solvable ones.}} The
     arrows {{\\color{{black!45}}$\\downarrow$}} and {{\\color{{black!45}}$\\uparrow$}}
-    mark the better direction, and the best value per column is bold.
-    \\emph{{Reduction}} gives the configuration \\rmode{{x}}, the remaining
+    mark the better direction and bold marks the best value per column.
+    \\emph{{Reduction}} gives the configuration \\rmode{{x}}, the \\rev{{number of}} remaining
     vertices, the reduction time $t^{{\\mathrm{{red}}}}$ and the peak memory. A superscript $\\star$
-    marks clique expansion and $\\mathsf{{T}}$ marks $H^{{\\mathsf{{T}}}}$.
+    marks clique expansion, $\\mathsf{{T}}$ marks the transposed $H^{{\\mathsf{{T}}}}$. \\rev{{\\ilp{{}} runs on $H$ and \\ilpg{{}} on the clique expansion.}}
     \\emph{{Solving}} gives the total number of instances solved and
-    \\emph{{$t$ all}}, the run time over all instances with unsolved ones penalised
-    at the ${tl:.0f}$\\,s limit.
+    \\tall{{}}, the run time over all instances with unsolved ones penalized
+    at the \\numprint{{{tl:.0f}}}\\,s limit.
     \\emph{{Reduction gain}} compares each solver with and without our reductions.
-    This includes the difference in number of solvable instances due to reductions
-    (\\emph{{\\#solved}}), \\emph{{speedup}} and \\emph{{memory}} giving run time and
+    This gives the difference in solved instances
+    (\\emph{{\\#solved}}), \\emph{{speedup}} and \\emph{{memory}} as run time and
     peak-memory improvement factors on instances each method solves both ways. The
-    mutually solved set differs per row, so these three columns are not comparable
+    mutually solved set differs per row, so these columns are not comparable
     across rows. Blank cells repeat the numbers above.{miss_note}}}
   \\label{{tab:strategies}}
   \\setlength{{\\tabcolsep}}{{2.7pt}}\\small
@@ -426,7 +434,7 @@ def main():
       \\multicolumn{{4}}{{c}}{{reduction}} & \\multicolumn{{3}}{{c}}{{solving}} & \\multicolumn{{3}}{{c}}{{reduction gain}} \\\\
     \\cmidrule(lr){{1-4}} \\cmidrule(lr){{5-7}} \\cmidrule(lr){{8-10}}
     {{\\rmode{{}}}} & {{remaining\\,{{\\color{{black!45}}$\\downarrow$}}}} & {{$t^{{\\mathrm{{red}}}}$\\,[s]\\,{{\\color{{black!45}}$\\downarrow$}}}} & {{mem\\,[MB]\\,{{\\color{{black!45}}$\\downarrow$}}}}
-      & {{solver}} & {{solved\\,{{\\color{{black!45}}$\\uparrow$}}}} & {{$t$ all\\,[s]\\,{{\\color{{black!45}}$\\downarrow$}}}}
+      & {{solver}} & {{solved\\,{{\\color{{black!45}}$\\uparrow$}}}} & {{\\tall{{}}\\,[s]\\,{{\\color{{black!45}}$\\downarrow$}}}}
       & {{\\#solved\\,{{\\color{{black!45}}$\\uparrow$}}}} & {{speedup\\,{{\\color{{black!45}}$\\uparrow$}}}} & {{memory\\,{{\\color{{black!45}}$\\uparrow$}}}} \\\\
     \\midrule
 {body}

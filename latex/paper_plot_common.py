@@ -523,8 +523,8 @@ def read_solver_rows(path, warn=True):
 def read_ilp_method_values(input_dir, metric_col, methods=ILP_METHODS, warn=True):
     """Return (available_methods, {method: {graph: value}}).
 
-    An instance is a GRAPH; its value is the geometric mean of `metric_col` over
-    the graph's seeds.  A method counts a graph as solved only if it has an
+    An instance is a GRAPH; its value is the minimum of `metric_col` over the
+    graph's seeds.  A method counts a graph as solved only if it has an
     optimal (opt==1), positive-metric row for EVERY seed that graph is run with
     (the union of seeds seen for it across all methods).  So a graph whose run
     crashed on some seeds -- leaving a missing/malformed row -- is correctly
@@ -582,7 +582,7 @@ def read_ilp_method_values(input_dir, metric_col, methods=ILP_METHODS, warn=True
                     break
                 vals.append(v)
             if ok:
-                gv[g] = geomean(vals)
+                gv[g] = min(vals)
         values[m] = gv
     return available, values
 

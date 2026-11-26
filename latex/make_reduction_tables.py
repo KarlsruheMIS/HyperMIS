@@ -328,7 +328,7 @@ def ablation_table(cfg, contrib, by_inst, n_inst):
     mark the better direction. In \\emph{{single rule}} we apply each rule on its
     own and report the fraction of elements left and the time this takes. In
     \\emph{{all $\\setminus$ rule}} we run the full pipeline with that one rule
-    disabled and report the difference compared to all rules. For the time we
+    disabled and report the difference compared to all rules. For the time, we
     give the total $\\sum \\Delta t$ over all ${ng}$ instances, since the effect is
     concentrated on a few large instances. A positive value
     means using the rule saves time. \\emph{{In pipeline}} gives each rule's share

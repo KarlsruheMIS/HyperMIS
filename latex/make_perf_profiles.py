@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Performance profiles (Dolan & More, 2002) of the ILP results.
 
-An instance is a GRAPH; its per-metric value is the geometric mean over the
+An instance is a GRAPH; its per-metric value is the minimum over the
 graph's seeds, counted only if every seed was solved optimally (see
 paper_plot_common.read_ilp_method_values).  For each metric and instance p we
 compute per method s the ratio r_{p,s} = value_{p,s} / min_s value_{p,s}; the

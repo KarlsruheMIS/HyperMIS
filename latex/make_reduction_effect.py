@@ -188,7 +188,7 @@ def main():
 
     caption = (
         r"Instance properties before ($H$) and after ($H'$) our reduction routine. The first"
-        r" two rows aggregate all $" f"{n_all}" r"$ instances; below, we split them"
+        r" two rows aggregate all $" f"{n_all}" r"$ instances. Below, we split them"
         r" into the $" f"{n_full}" r"$ \emph{fully reducible} instances, which"
         r" preprocessing solves outright, and the $" f"{n_rem}" r"$ \emph{remaining}"
         r" ones before and after reduction. Columns: vertices $n$, edges $m$, average"

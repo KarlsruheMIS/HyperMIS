@@ -37,9 +37,9 @@ LEGEND_KEY = "solverlegend"
 # y-tick labels (0.2 vs 10^{-2}) or y-axis label ([s], [MB]) happen to be.  The
 # seps are the gaps between boxes: HSEP holds the right column's y labels, VSEP
 # the top row's x labels.
-AXIS_W = "0.38\\linewidth"
+AXIS_W = "0.37\\linewidth"
 AXIS_H = "0.23\\linewidth"
-HSEP = "42pt"
+HSEP = "55pt"
 VSEP = "34pt"
 # Common options shared by all four panels (size, style, box-only alignment).
 GROUP_OPTS = (
@@ -76,11 +76,11 @@ def main():
     caption = (
         "Performance profiles (top) and cactus plots (bottom) for run time "
         "(left) and peak memory (right) over the solvable instances. In the "
-        "profiles, points to the upper-left are better and a curve can only rise "
+        "profiles, points toward the upper left are better and a curve can only rise "
         "to the fraction of instances that the configuration solves. In the "
         "cactus plots, further right means more instances solved and lower means "
-        "cheaper, and each curve ends at the number of instances that the "
-        "configuration solves.")
+        "cheaper. \\rev{Hollow marks are without and filled marks with our "
+        "reductions. The half-filled mark uses graph reductions.}")
 
     # Group cells fill row-major: (top-left, top-right, bottom-left, bottom-right).
     frag_body = f"""\\begin{{figure*}}[t]

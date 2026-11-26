@@ -177,9 +177,11 @@ def build_reductions_table_source():
 
     n_blow = n_rblow = n_guard = 0
     for r in rows:
-        # Display name: the raw instance name shortened to the part before the
-        # first dot, prefixed with its graph class (ssmc added where missing).
-        r["label"] = add_class_prefix(r["graph"].split(".")[0])
+        # Display name: the same as in the per-instance solver table (format
+        # suffixes dropped, so variants such as .primal/.dual stay distinct),
+        # prefixed with its graph class (ssmc added where missing).
+        from make_solver_table import short_name
+        r["label"] = add_class_prefix(short_name(r["graph"]))
         r["blow"] = r["rblow"] = ""
         c = cq.get(r["graph"])
         if not c:

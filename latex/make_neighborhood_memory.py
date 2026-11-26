@@ -223,7 +223,7 @@ def main():
       label style={{font=\\small}}, tick label style={{font=\\small}},
       xmode=log, ymode=log,
       xmin={xlo:.4g}, xmax={xhi:.4g}, ymin={ylo:.4g}, ymax={yhi:.4g},
-      xlabel={{reduce time [s]}}, ylabel={{peak memory [MB]}},
+      xlabel={{reduction time [s]}}, ylabel={{peak memory [MB]}},
       legend cell align=left, {LEGEND_ABOVE},
       legend image post style={{mark size=3pt}},
       grid=both, grid style={{gray!20}}, {AXIS_OPEN},
@@ -231,10 +231,10 @@ def main():
 {body}
     \\end{{axis}}
   \\end{{tikzpicture}}
-  \\caption{{The time--memory trade-off of reducing an instance.  Comparing
-    \\rmode{{r}} recompute, \\rmode{{p}} precompute, \\rmode{{d}} on-demand, and
-    \\rmode[\\star]{{G}} the clique expansion with graph rules.  Each mark is one
-    instance, the large outlined mark is the strategy's shifted geometric
+  \\caption{{The time--memory trade-off of reducing an instance. We compare
+    \\rmode{{r}} (recompute), \\rmode{{p}} (precompute), \\rmode{{d}} (on-demand), and
+    \\rmode[\\star]{{G}} (clique expansion with graph rules). Each mark is one
+    instance. The large outlined mark is the strategy's shifted geometric
     mean.}}
   \\label{{fig:neighborhood-mem}}
 \\end{{figure}}"""

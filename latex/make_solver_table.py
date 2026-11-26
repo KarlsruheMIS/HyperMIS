@@ -78,7 +78,7 @@ COLUMN_GROUPS = [
     # Solved on the hypergraph itself -- the ILP directly, the b-matching solver
     # on its transpose; neither ever materializes the expansion.
     ("hypergraph", ["ilp", "bmatching"]),
-    ("clique expanded graph", ["gfilp", "struction", "satreduce", "vc_solver"]),
+    ("clique-expanded graph", ["gfilp", "struction", "satreduce", "vc_solver"]),
 ]
 
 # Column header per approach.  The long solver names get a two-line stacked
@@ -286,17 +286,23 @@ def main():
             body.append("    \\addlinespace[4pt]")
         prev_cls = cls
         times = {m: tvals.get(m, {}).get(g) for p in pairs for m in p}
-        solved = [t for t in times.values() if t is not None]
-        row_best = min(solved) if solved else None
         ex = extras.get(g, {})
         # When the reduction solves the instance entirely (empty kernel), every
         # reduced configuration does exactly the same work -- just the reduction --
-        # so its time IS the reduction time.  We therefore show that single value,
-        # in bold, in the reduction column and in every $t_\strong$ column, rather
-        # than the near-identical but noisy per-solver measurements.
+        # so its time IS the reduction time.  We therefore show that single value
+        # in every $t_\strong$ column, rather than the near-identical but noisy
+        # per-solver measurements.
         red_t = ex.get("time")
-        red_bold = (f"\\textbf{{\\numprint{{{red_t}}}}}"
-                    if ex.get("fully") and red_t else None)
+        shared = float(red_t) if ex.get("fully") and red_t else None
+        # "Best in row" is taken over the values the table SHOWS: in a fully
+        # solved row the measured reduced times are replaced by the reduction
+        # time, which may be slower than a run without reductions.
+        shown = [t for (a, b) in pairs
+                 for t in (times[a], times[b] if shared is None else shared)
+                 if t is not None]
+        row_best = min(shown) if shown else None
+        shared_cell = (fmt_cell(shared, None, row_best)
+                       if shared is not None else None)
 
         def np(s):
             """A formatted number in \\numprint (\\, grouping); '--' if missing."""
@@ -308,11 +314,12 @@ def main():
                  np(ex.get("rem")),
                  np(ex.get("b")),
                  np(ex.get("br")),
-                 red_bold or np(ex.get("time"))]
+                 np(ex.get("time"))]
         for a, b in pairs:
             a_cell = fmt_cell(times[a], failures.get(a, {}).get(g), row_best)
-            b_cell = red_bold or fmt_cell(times[b], failures.get(b, {}).get(g),
-                                          row_best)
+            b_cell = shared_cell or fmt_cell(times[b],
+                                             failures.get(b, {}).get(g),
+                                             row_best)
             cells += [a_cell, b_cell]
         # Shade rows the reduction solves entirely (empty kernel).  \rowcolor must
         # lead the row.
@@ -333,12 +340,14 @@ def main():
         "instance, and the reduction time \\tred{d}. For each approach we "
         "report the time $t$ without and \\ttot{d} with our reduction "
         "preprocessing whenever an instance was solved. We mark exceeded time "
-        "limits (3600\\,s $\\mid$ \\mbox{--}), reached memory bounds ($32$\\,GB "
+        "limits (\\numprint{3600}\\,s $\\mid$ \\mbox{--}), reached memory bounds ($32$\\,GB "
         "$\\mid \\ \\dagger$), and internal errors ($\\ddagger$). All times are in "
-        "seconds. All \\ttot{d} include the reduction and in the "
-        "clique-expansion group they also include the expansion. Instances with "
+        "seconds. All \\ttot{d} include the reduction, and in the "
+        "clique-expansion group they also include the expansion. Instances in "
         "\\colorbox{lightgray}{shaded} rows are fully solved by reduction. The "
-        "fastest configuration per instance is \\textbf{bold}.")
+        "fastest configuration per instance is \\textbf{bold}. \\rev{In shaded "
+        "rows, all \\ttot{d} entries show the reduction time since no solver "
+        "is needed.}")
 
     frag = f"""\\begin{{landscape}}
 \\begin{{table}}[p]
