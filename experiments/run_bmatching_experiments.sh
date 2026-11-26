@@ -1,6 +1,6 @@
 #!/bin/bash
 #   SOTA hypergraph b-matching (HeiHGM) as an exact MIS solver via transpose
-#   duality, once raw (bmatching.tsv) and once after HyperMIS reductions
+#   duality (its own reductions, then Gurobi, then unfolding), once raw (bmatching.tsv) and once after HyperMIS reductions
 #   (rbmatching.tsv). One TSV line per (instance,seed); resumable + failure log.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,11 +23,11 @@ w_bmatching() {
   local seed="$1" inst="$2" name base src dual
   name=$(basename "$inst")
   base=$(mktemp "$TMP/b.XXXXXX")
-  local offset=0 rtime=0 cmem=0 rn
+  local offset=0 rtime=0 cmem=0 rn total
   src="$inst"
 
   if [[ "$MODE" == reduce ]]; then
-    run_capture 0 -- "$RUN_REDUCE" -g "$inst" -d -k "$T" -s "$seed" -o "$base.hgr"
+    run_capture 0 -- "$RUN_REDUCE" -g "$inst" -d -k "$KS" -s "$seed" -o "$base.hgr"
     if [[ "$_C_STATUS" != SUCCESS ]]; then
       if [[ "$_C_STATUS" == OOM ]]; then
         printf '%s\t%s\t0\t%s\t0\t%s\t%s\n' "$name" "$ALGO" "$T" "$seed" "$_C_MEM"
@@ -55,13 +55,23 @@ w_bmatching() {
     record_failure "$ALGO" transpose "$seed" "$name" "$_C_RC" error "$_C_ERR"
     rm -f "$base" "$base.hgr" "$dual"; return
   fi
-  local pmem=$_C_MEM
+  local pmem=$_C_MEM ptime=$_C_ELAPSED     # transpose: counted in the total time
+  offset=$((offset + _C_OUT))   # isolated vertices dropped by the transposer
 
-  run_capture $((T + 120)) -- "$BM" --graph "$dual" --algorithms ilp_exact --capacity 1 --timeout "$T" --quiet
+  local dm
+  dm=$(awk 'NR==1{print $1; exit}' "$dual")
+  if [[ "$dm" -eq 0 ]]; then
+    # only isolated vertices left: nothing to solve (the solver needs >= 1 edge)
+    total=$(awk -v a="$rtime" -v c="$ptime" 'BEGIN{print a+c}')
+    printf '%s\t%s\t%s\t%s\t1\t%s\t%s\n' "$name" "$ALGO" "$offset" "$total" "$seed" "$(imax "$cmem" "$pmem")"
+    rm -f "$base" "$base.hgr" "$dual"; return
+  fi
+
+  run_capture $((T + 120)) -- "$BM" --graph "$dual" --algorithms reductions,presolved_ilp,unfold --capacity 1 --timeout "$T" --quiet
   local smem=$_C_MEM elapsed=$_C_ELAPSED rc=$_C_RC bmout=$_C_OUT
   rm -f "$base" "$base.hgr" "$dual"
 
-  local mis opt total size mem mt ex
+  local mis opt size mem mt ex
   case "$_C_STATUS" in
     SUCCESS)
       mt=$(awk '/^size:/{print $2+0}'  <<<"$bmout")
@@ -75,7 +85,7 @@ w_bmatching() {
              return ;;
   esac
   size=$(awk -v a="$offset" -v b="$mis" 'BEGIN{print a+b}')
-  total=$(awk -v a="$rtime" -v b="$elapsed" 'BEGIN{print a+b}')
+  total=$(awk -v a="$rtime" -v c="$ptime" -v b="$elapsed" 'BEGIN{print a+c+b}')
   mem=$(imax "$(imax "$cmem" "$pmem")" "$smem")
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ALGO" "$size" "$total" "$opt" "$seed" "$mem"
 }
@@ -83,7 +93,7 @@ export -f w_bmatching imax
 
 mapfile -t SOLVABLE < <(ls "$HG_SOLVABLE"/*)
 
-echo "== b-matching (transpose + exact ilp), no reductions =="
+echo "== b-matching (transpose + its reductions + exact ilp), no HyperMIS reductions =="
 export MODE=raw ALGO=bmatching
 run_block bmatching "$RES/GRAPH/bmatching.tsv" "$HDR" 1 w_bmatching SEEDS "${SOLVABLE[@]}"
 

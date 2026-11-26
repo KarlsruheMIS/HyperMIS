@@ -62,7 +62,8 @@ SEEDS=(1 21 203 1002)
 # report COMPLETE while the new configs have never been run.
 CONFIGS=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
 T=3600             # solver / ILP wall budget (seconds)
-K=3600             # kernel (reduction) budget (seconds)
+K=3600             # reduction budget when only reducing (reduction experiments)
+KS=100             # reduction budget when a solver runs afterwards (all methods)
 
 # ---- CPU pinning (see topology.sh) ----------------------------------------
 # Every parallel slot is bound to a fixed, disjoint set of physical cores inside
@@ -156,7 +157,7 @@ SCRATCH_BASE="${TMPDIR:-$HOME/scratch}"
 
 # Export the scalars the worker functions (run under GNU parallel) need. Arrays
 # such as SEEDS stay in the main shell (used only by emit_pending via nameref).
-export RES FAILURES HG_FULL HG_SOLVABLE T K MEM_LIMIT
+export RES FAILURES HG_FULL HG_SOLVABLE T K KS MEM_LIMIT
 export RUN_REDUCE RUN_ILP HG2G GRC CLIQUE_BLOWUP STRUCTION VC SATREDUCE BM TRANSPOSE
 export SCRATCH_BASE
 

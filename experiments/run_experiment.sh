@@ -32,7 +32,7 @@ w_reduce() {
 # (size 0, opt 0) so it counts as done and is not retried; other errors log+retry.
 w_ilp() {
   local seed="$1" inst="$2" name; name=$(basename "$inst")
-  run_capture 0 -- "$RUN_ILP" $IFLAGS -g "$inst" -t "$T" -s "$seed"
+  run_capture 0 -- "$RUN_ILP" $IFLAGS -g "$inst" -t "$T" -k "$KS" -s "$seed"
   case "$_C_STATUS" in
     SUCCESS) printf '%s\t%s\n' "$_C_OUT" "$_C_MEM" ;;
     OOM)     printf '%s\tILP\t0\t%s\t0\t%s\t%s\n' "$name" "$T" "$seed" "$_C_MEM"

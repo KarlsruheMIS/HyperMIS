@@ -180,7 +180,6 @@ int main(int argc, char **argv)
 
         hypergraph *rg = hypergraph_build_reduced(g, map.data(), remap.data(), reduced.data());
         assert(hypergraph_validate(rg));
-        std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
 
         double avg_e_size = 0.0;
         if (rg->m != 0)
@@ -189,10 +188,6 @@ int main(int argc, char **argv)
                 avg_e_size += rg->Ed[e];
             avg_e_size = avg_e_size / rg->m;
         }
-
-        std::printf("%s\treduce%ld\t%d\t%d\t%.2f\t%d\t%d\t%.2f\t%d\t%.5f\t%d\n",
-                    name.c_str(), REDUCTION_CONFIG, g->n, g->m, original_avg_e_size,
-                    rg->n, rg->m, avg_e_size, mis_alg->status.IS_size, (double)time.count(), seed);
 
         if (rg->n > 0)
         {
@@ -206,6 +201,13 @@ int main(int argc, char **argv)
             outFile << "0 0 10";
             outFile.close();
         }
+
+        // The reported time covers the reductions AND the clique expansion of
+        // the kernel (neighborhoods plus writing the graph file).
+        std::chrono::duration<double> time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - mis_alg->start_time);
+        std::printf("%s\treduce%ld\t%d\t%d\t%.2f\t%d\t%d\t%.2f\t%d\t%.5f\t%d\n",
+                    name.c_str(), REDUCTION_CONFIG, g->n, g->m, original_avg_e_size,
+                    rg->n, rg->m, avg_e_size, mis_alg->status.IS_size, (double)time.count(), seed);
 
         hypergraph_free(rg);
         hypergraph_free(g);

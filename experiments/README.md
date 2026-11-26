@@ -76,7 +76,8 @@ whole result set, since timings are only comparable within one mode.
 
 ## Configuration — `experiments/config.sh`
 
-One place for everything: `SEEDS`, `N_JOBS`, `PIN_MODE`, `T`/`K` budgets,
+One place for everything: `SEEDS`, `N_JOBS`, `PIN_MODE`, `T`/`K`/`KS` budgets
+(`KS`: reduction budget before any solve),
 instance-set paths, binary paths, and `MEM_LIMIT`. Nothing about any specific
 machine is hard-coded.
 

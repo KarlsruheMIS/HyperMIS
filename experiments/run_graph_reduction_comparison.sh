@@ -69,7 +69,7 @@ export EXP=gred GFLAGS="-r15 -k $K" GROW=grc
 run_block gred "$RES/RED/gred.tsv" "$GRC_H" 1 w_grc SEEDS "${FULL[@]}"
 
 echo "== Graph-ILP after graph reductions (grilp) =="
-export EXP=grilp GFLAGS="-i -r15 -k 100 -t $K" GROW=ilp
+export EXP=grilp GFLAGS="-i -r15 -k $KS -t $T" GROW=ilp
 run_block grilp "$RES/ILP/grilp.tsv" "$ILP_H" 1 w_grc SEEDS "${SOLVABLE[@]}"
 
 echo "All requested blocks complete."

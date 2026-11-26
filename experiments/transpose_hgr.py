@@ -20,6 +20,13 @@ Input parsing mirrors hypergraph_parse() in src/hypergraph.cpp:
   vertices are 1-indexed; '%' / '#' lines are comments.
 
 The dual is written UNWEIGHTED (no fmt token) so b-matching maximizes cardinality.
+
+Isolated vertices (in no edge) would become empty dual edges, i.e. empty lines.
+The HeiHGM reader skips empty lines and then loops forever at the end of the
+file. They are therefore NOT written, and the dual header counts only the
+non-empty edges. Every isolated vertex is in each maximum independent set, so
+the number of dropped vertices is printed to stdout and the caller must add it
+to the solution size.
 """
 import sys
 
@@ -56,19 +63,24 @@ def transpose(in_path, out_path):
                 continue
             if v > n:
                 raise ValueError(f"{in_path}: vertex {v} exceeds declared n={n}")
+            if incident[v] and incident[v][-1] == e:
+                continue                # vertex listed twice in the same edge
             incident[v].append(e)      # dual vertex = original edge index (1-based)
     if e != m:
         raise ValueError(f"{in_path}: expected {m} edge lines, found {e}")
 
-    # Dual: n edges (one per original vertex), m vertices (one per original edge).
+    # Dual: one edge per non-isolated original vertex, m vertices (one per
+    # original edge).
+    dual_edges = [inc for inc in incident[1:] if inc]
     with open(out_path, "w") as out:
-        out.write(f"{n} {m}\n")
-        for v in range(1, n + 1):
-            out.write(" ".join(map(str, incident[v])))
+        out.write(f"{len(dual_edges)} {m}\n")
+        for inc in dual_edges:
+            out.write(" ".join(map(str, inc)))
             out.write("\n")
+    return n - len(dual_edges)          # number of dropped isolated vertices
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit(f"usage: {sys.argv[0]} <in.hgr> <out.dual.hgr>")
-    transpose(sys.argv[1], sys.argv[2])
+    print(transpose(sys.argv[1], sys.argv[2]))

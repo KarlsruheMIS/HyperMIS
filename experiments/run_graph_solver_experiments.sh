@@ -21,15 +21,18 @@ imax() { awk -v a="$1" -v b="$2" 'BEGIN{print (a+0>b+0)?a+0:b+0}'; }
 
 # Build the clique-expansion graph. Sets _BG_OFFSET _BG_RTIME _BG_CMEM and the
 # run_capture globals; returns non-zero (and leaves _C_STATUS) on failure.
+# _BG_RTIME is the conversion time, plus the reduction time in reduce mode.
 build_graph() {
   local inst="$1" seed="$2" mode="$3" graph="$4"
   if [[ "$mode" == reduce ]]; then
-    run_capture 0 -- "$HG2G" -g "$inst" -d -s "$seed" -t "$T" -o "$graph"
+    run_capture 0 -- "$HG2G" -g "$inst" -d -s "$seed" -k "$KS" -o "$graph"
     _BG_OFFSET=$(awk -F'\t' 'END{print $9+0}'  <<<"$_C_OUT")
     _BG_RTIME=$(awk  -F'\t' 'END{print $10+0}' <<<"$_C_OUT")
   else
     run_capture 0 -- "$HG2G" -g "$inst" -o "$graph"
-    _BG_OFFSET=0; _BG_RTIME=0
+    _BG_OFFSET=0
+    _BG_RTIME=$(awk '/ in time /{print $NF+0}' <<<"$_C_OUT")
+    _BG_RTIME=${_BG_RTIME:-0}
   fi
   _BG_CMEM=$_C_MEM
   [[ "$_C_STATUS" == SUCCESS ]]
@@ -102,12 +105,14 @@ w_struction() {
 }
 
 w_vc() {
-  local seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
+  local d0 dtime seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
   name=$(basename "$inst"); graph=$(mktemp "$TMP/g.XXXXXX")
   if ! build_graph "$inst" "$seed" "$MODE" "$graph"; then
     _handle_build_fail "$name" "$ALGO" "$seed"; rm -f "$graph"; return
   fi
-  dimacs="$graph.dimacs"; to_dimacs "$graph" "$dimacs"
+  dimacs="$graph.dimacs"
+  d0=$(date +%s.%N); to_dimacs "$graph" "$dimacs"
+  dtime=$(awk -v a="$d0" -v b="$(date +%s.%N)" 'BEGIN{print b-a}')
   run_capture $((T + 120)) -- "$VC" --time_limit="$T" --seed="$seed" < "$dimacs"
   smem=$_C_MEM; elapsed=$_C_ELAPSED; rm -f "$graph" "$dimacs"
   case "$_C_STATUS" in
@@ -122,13 +127,13 @@ w_vc() {
           record_failure "$ALGO" vc_solver "$seed" "$name" "$_C_RC" error "$_C_ERR"; return ;;
   esac
   size=$(awk -v a="$_BG_OFFSET" -v b="$mis" 'BEGIN{print a+b}')
-  total=$(awk -v a="$_BG_RTIME" -v b="$elapsed" 'BEGIN{print a+b}')
+  total=$(awk -v a="$_BG_RTIME" -v d="$dtime" -v b="$elapsed" 'BEGIN{print a+d+b}')
   mem=$(imax "$_BG_CMEM" "$smem")
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ALGO" "$size" "$total" "$opt" "$seed" "$mem"
 }
 
 w_satreduce() {
-  local seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
+  local d0 dtime seed="$1" inst="$2" name graph dimacs gn vc mis size opt smem elapsed total mem
   name=$(basename "$inst"); graph=$(mktemp "$TMP/g.XXXXXX")
   if ! build_graph "$inst" "$seed" "$MODE" "$graph"; then
     _handle_build_fail "$name" "$ALGO" "$seed"; rm -f "$graph"; return
@@ -138,7 +143,9 @@ w_satreduce() {
     printf '%s\t%s\t%s\t%s\t1\t%s\t%s\n' "$name" "$ALGO" "$_BG_OFFSET" "$_BG_RTIME" "$seed" "$_BG_CMEM"
     rm -f "$graph"; return
   fi
-  dimacs="$graph.dimacs"; to_dimacs "$graph" "$dimacs"
+  dimacs="$graph.dimacs"
+  d0=$(date +%s.%N); to_dimacs "$graph" "$dimacs"
+  dtime=$(awk -v a="$d0" -v b="$(date +%s.%N)" 'BEGIN{print b-a}')
   # vc-bnb has no internal time limit and no seed: the wall timeout is the only limit.
   run_capture "$T" -- "$SATREDUCE" --stats "$dimacs"
   smem=$_C_MEM; elapsed=$_C_ELAPSED; rm -f "$graph" "$dimacs"
@@ -154,7 +161,7 @@ w_satreduce() {
           record_failure "$ALGO" satreduce "$seed" "$name" "$_C_RC" error "$_C_ERR"; return ;;
   esac
   size=$(awk -v a="$_BG_OFFSET" -v b="$mis" 'BEGIN{print a+b}')
-  total=$(awk -v a="$_BG_RTIME" -v b="$elapsed" 'BEGIN{print a+b}')
+  total=$(awk -v a="$_BG_RTIME" -v d="$dtime" -v b="$elapsed" 'BEGIN{print a+d+b}')
   mem=$(imax "$_BG_CMEM" "$smem")
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$ALGO" "$size" "$total" "$opt" "$seed" "$mem"
 }
