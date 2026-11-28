@@ -191,9 +191,7 @@ def main():
         r" two rows aggregate all $" f"{n_all}" r"$ instances. Below, we split them"
         r" into the $" f"{n_full}" r"$ \emph{fully reducible} instances, which"
         r" preprocessing solves outright, and the $" f"{n_rem}" r"$ \emph{remaining}"
-        r" ones before and after reduction. Columns: vertices $n$, edges $m$, average"
-        r" edge size $\bar e$, average degree $\bar d$, size $|H|$, and the"
-        r" clique-expansion blow-up $b$. We dash $\bar e$,"
+        r" ones before and after reduction. We dash $\bar e$,"
         r" $\bar d$, and $b$ for the all-instance reduced row, as they are undefined"
         r" on the fully reduced instances.")
 

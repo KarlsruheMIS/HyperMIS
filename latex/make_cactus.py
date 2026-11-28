@@ -39,8 +39,8 @@ KB_PER_MB = 1024.0
 # than inherited from insertion order -- the caption says "Left: run time,
 # Right: peak memory" and must not be able to drift away from the figure.
 METRICS = [
-    ("time", "time", "run time [s]", 1.0, 0.01),
-    ("mem", "mem", "peak memory [MB]", KB_PER_MB, 1.0),
+    ("time", "time", "running time [s]", 1.0, 0.01),
+    ("mem", "mem", "peak memory [MB]", KB_PER_MB, 5.0),   # data starts at 7 MB
 ]
 
 

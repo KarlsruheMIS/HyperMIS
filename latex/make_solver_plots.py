@@ -74,7 +74,7 @@ def main():
                                        collect_legend=False, key=LEGEND_KEY))
 
     caption = (
-        "Performance profiles (top) and cactus plots (bottom) for run time "
+        "Performance profiles (top) and cactus plots (bottom) for running time "
         "(left) and peak memory (right) over the solvable instances. In the "
         "profiles, points toward the upper left are better and a curve can only rise "
         "to the fraction of instances that the configuration solves. In the "

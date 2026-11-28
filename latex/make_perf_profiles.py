@@ -33,7 +33,7 @@ INPUT_DIR = os.path.join(RESULTS_DIR, "ILP")
 # from insertion order -- the captions say "Left: run time, Right: peak memory"
 # and must not be able to drift away from the figure.
 METRICS = [
-    ("time", "time", "run time"),
+    ("time", "time", "running time"),
     ("mem", "mem", "memory"),
 ]
 

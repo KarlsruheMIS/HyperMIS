@@ -22,7 +22,7 @@ the solution size, which we verified is
 identical across every configuration that proves optimality.
 
 Output:
-    tables/solvers.tex  (landscape table, tab:overview)
+    tables/solvers.tex  (sidewaystable*, tab:overview)
 """
 
 import os
@@ -51,6 +51,10 @@ LABEL = "tab:overview"
 # (size, time, mem, opt), so the reasons are recovered rather than guessed:
 #   size = -1        the solver aborted with an internal error   -> crash
 #   size = -2        the harness recorded an out-of-memory kill  -> memory
+#   size = 0, mem = 0, opt = 0: the older ILP harness's out-of-memory row (it
+#                    wrote size 0, time = limit, and the 0 RSS of the killed
+#                    process). A run that actually executed always has mem > 0,
+#                    so this cannot be a timeout                   -> memory
 #   mem > MEM_LIMIT  the run exceeded the memory bound           -> memory
 #   time >= limit    the run hit the time limit                  -> time
 #   size > 0 and it finished inside both bounds with opt = 0: it returned a
@@ -139,6 +143,8 @@ def classify(row):
         return "crash"
     if size == -2 or mem > MEM_LIMIT_KB:
         return "memory"
+    if size == 0 and mem == 0:
+        return "memory"  # legacy ILP out-of-memory row, see the table above
     if time >= TIME_LIMIT_S:
         return "time"
     # Finished inside both bounds without proving optimality.  A positive size
@@ -333,30 +339,29 @@ def main():
 
     n_solved = {m: len(tvals.get(m, {})) for p in pairs for m in p}
     caption = (
-        "Per-instance run time of all methods on solvable instances. The columns "
+        "Per-instance running time of all methods on solvable instances. The columns "
         "show the optimal solution size $\\alpha(H)$, the hypergraph size $|H|$ "
-        "(in millions), the percentage remaining after reduction (rem, \\%), the "
-        "clique-expansion blow-up of the original $b$ and the reduced $b_r$ "
-        "instance, and the reduction time \\tred{d}. For each approach we "
+        "(in millions), the percentage remaining after reduction (rem.\\,\\%), the "
+        "clique-expansion blow-up of the original ($b$) and the reduced ($b_r$) "
+        "instance, and the reduction time \\tred{d}. For each approach, we "
         "report the time $t$ without and \\ttot{d} with our reduction "
         "preprocessing whenever an instance was solved. We mark exceeded time "
-        "limits (\\numprint{3600}\\,s $\\mid$ \\mbox{--}), reached memory bounds ($32$\\,GB "
+        "limits (\\numprint{3600}\\,s $\\mid$ \\mbox{--}), exceeded memory limits ($32$\\,GB "
         "$\\mid \\ \\dagger$), and internal errors ($\\ddagger$). All times are in "
-        "seconds. All \\ttot{d} include the reduction, and in the "
-        "clique-expansion group they also include the expansion. Instances in "
+        "seconds. All \\ttot{d} include the reduction. In the clique expansion "
+        "group, both $t$ and \\ttot{d} also include building the expansion. Instances in "
         "\\colorbox{lightgray}{shaded} rows are fully solved by reduction. The "
         "fastest configuration per instance is \\textbf{bold}. \\rev{In shaded "
         "rows, all \\ttot{d} entries show the reduction time since no solver "
         "is needed.}")
 
-    frag = f"""\\begin{{landscape}}
-\\begin{{table}}[p]
+    frag = f"""\\begin{{sidewaystable*}}
   \\centering
   \\caption{{{caption}}}
   \\label{{{LABEL}}}
   \\setlength{{\\tabcolsep}}{{3pt}}
   \\renewcommand{{\\arraystretch}}{{.86}}
-  \\begin{{adjustbox}}{{width=\\linewidth, max totalheight=\\textheight, keepaspectratio}}
+  \\begin{{adjustbox}}{{width=\\linewidth, max totalheight=0.9\\textwidth, keepaspectratio}}
   \\begin{{tabular}}{{{colspec}}}
     {" & ".join(head_group)} \\\\
     {group_rule_line}
@@ -368,8 +373,7 @@ def main():
     \\bottomrule
   \\end{{tabular}}
   \\end{{adjustbox}}
-\\end{{table}}
-\\end{{landscape}}"""
+\\end{{sidewaystable*}}"""
 
     path = emit_fragment(tab_path("solvers.tex"), frag)
     print(f"instances (rows)   : {len(universe)}")

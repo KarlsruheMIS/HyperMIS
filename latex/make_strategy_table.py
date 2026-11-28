@@ -413,18 +413,15 @@ def main():
   \\centering
   \\caption{{Reduction and solving cost per strategy. \\rev{{The reduction columns
     use the ${n_red}$ instances that all strategies process, and the solving columns
-    the ${n_any}$ solvable ones.}} The
-    arrows {{\\color{{black!45}}$\\downarrow$}} and {{\\color{{black!45}}$\\uparrow$}}
-    mark the better direction and bold marks the best value per column.
+    the ${n_any}$ solvable ones.}}
     \\emph{{Reduction}} gives the configuration \\rmode{{x}}, the \\rev{{number of}} remaining
-    vertices, the reduction time $t^{{\\mathrm{{red}}}}$ and the peak memory. A superscript $\\star$
-    marks clique expansion, $\\mathsf{{T}}$ marks the transposed $H^{{\\mathsf{{T}}}}$. \\rev{{\\ilp{{}} runs on $H$ and \\ilpg{{}} on the clique expansion.}}
+    vertices, the reduction time $t^{{\\mathrm{{red}}}}$ and the peak memory.
     \\emph{{Solving}} gives the total number of instances solved and
-    \\tall{{}}, the run time over all instances with unsolved ones penalized
+    \\tall{{}}, the running time over all instances with unsolved ones penalized
     at the \\numprint{{{tl:.0f}}}\\,s limit.
     \\emph{{Reduction gain}} compares each solver with and without our reductions.
     This gives the difference in solved instances
-    (\\emph{{\\#solved}}), \\emph{{speedup}} and \\emph{{memory}} as run time and
+    (\\emph{{\\#solved}}), \\emph{{speedup}} and \\emph{{memory}} as running-time and
     peak-memory improvement factors on instances each method solves both ways. The
     mutually solved set differs per row, so these columns are not comparable
     across rows. Blank cells repeat the numbers above.{miss_note}}}

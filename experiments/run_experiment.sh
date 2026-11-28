@@ -42,14 +42,18 @@ w_reduce() {
     *)       record_failure "$EXP" reduce "$seed" "$name" "$_C_RC" error "$_C_ERR" ;;
   esac
 }
-# ILP worker. Uses exported IFLAGS / EXP. OOM -> a schema-valid unsolved row
-# (size 0, opt 0) so it counts as done and is not retried; other errors log+retry.
+# ILP worker. Uses exported IFLAGS / EXP. OOM -> the same out-of-memory sentinel
+# row as the graph-solver scripts (size $OOM_SIZE, opt 0, elapsed time) so it
+# counts as done, is not retried, and the tables show it as a memory failure
+# rather than a timeout. Other errors log+retry.
+# (Rows written before this change used size 0, time $T, mem 0 instead;
+# make_solver_table.py still reads those as out of memory.)
 w_ilp() {
   local seed="$1" inst="$2" name; name=$(basename "$inst")
   run_capture 0 -- "$RUN_ILP" $IFLAGS -g "$inst" -t "$T" -k "$KS" -s "$seed"
   case "$_C_STATUS" in
     SUCCESS) printf '%s\t%s\n' "$_C_OUT" "$_C_MEM" ;;
-    OOM)     printf '%s\tILP\t0\t%s\t0\t%s\t%s\n' "$name" "$T" "$seed" "$_C_MEM"
+    OOM)     printf '%s\tILP\t%s\t%s\t0\t%s\t%s\n' "$name" "$OOM_SIZE" "$_C_ELAPSED" "$seed" "$_C_MEM"
              record_failure "$EXP" ILP "$seed" "$name" "$_C_RC" oom "$_C_ERR" ;;
     *)       record_failure "$EXP" ILP "$seed" "$name" "$_C_RC" error "$_C_ERR" ;;
   esac

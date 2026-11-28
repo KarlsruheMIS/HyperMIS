@@ -323,9 +323,7 @@ def ablation_table(cfg, contrib, by_inst, n_inst):
     DT = "S[table-format=-4.0]"  # signed integer total of the time deltas [s]
     return f"""\\begin{{table*}}[t]
   \\centering \\small
-  \\caption{{Per-rule ablation in three parts. An element is a vertex or an edge,
-    and the arrows {{\\color{{black!45}}$\\downarrow$}} and {{\\color{{black!45}}$\\uparrow$}}
-    mark the better direction. In \\emph{{single rule}} we apply each rule on its
+  \\caption{{Per-rule ablation in three parts. An element is a vertex or an edge. In \\emph{{single rule}} we apply each rule on its
     own and report the fraction of elements left and the time this takes. In
     \\emph{{all $\\setminus$ rule}} we run the full pipeline with that one rule
     disabled and report the difference compared to all rules. For the time, we
@@ -341,7 +339,7 @@ def ablation_table(cfg, contrib, by_inst, n_inst):
     \\cmidrule(lr){{2-5}} \\cmidrule(lr){{6-8}} \\cmidrule(lr){{9-12}}
     & \\multicolumn{{2}}{{c}}{{remaining\\,\\%\\,{{\\color{{black!45}}$\\downarrow$}}}} & \\multicolumn{{2}}{{c}}{{$t$\\,[s]\\,{{\\color{{black!45}}$\\downarrow$}}}}
          & \\multicolumn{{2}}{{c}}{{$\\Delta$\\,remaining\\,\\%}} & {{$\\sum \\Delta t$\\,[s]}}
-         & {{removed\\,\\%\\,{{\\color{{black!45}}$\\uparrow$}}}} & {{time\\,\\%\\,{{\\color{{black!45}}$\\downarrow$}}}} & \\multicolumn{{2}}{{c}}{{$t$/elem\\,[$\\mu$s]\\,{{\\color{{black!45}}$\\downarrow$}}}} \\\\
+         & {{removed\\,\\%}} & {{time\\,\\%}} & \\multicolumn{{2}}{{c}}{{$t$/elem\\,[$\\mu$s]\\,{{\\color{{black!45}}$\\downarrow$}}}} \\\\
     \\midrule
 {body}
     \\midrule
